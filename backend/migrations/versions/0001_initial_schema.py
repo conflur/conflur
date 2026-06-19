@@ -4,6 +4,11 @@ Revision ID: 0001
 Revises:
 Create Date: 2026-06-19
 
+Modelo de tenancy de primera clase:
+  tenants (consultorio) ← memberships → users (identidad global)
+  recursos clínicos/operativos cuelgan del tenant (tenant_id = tenants.id)
+  patient_access resuelve la visibilidad clínica DENTRO del consultorio
+  RLS sobre tenant_id aísla ENTRE consultorios
 """
 from typing import Sequence, Union
 
@@ -18,14 +23,26 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # --- users ---
+    # --- tenants (consultorio) ---
+    op.create_table(
+        "tenants",
+        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("name", sa.String(255), nullable=False),
+        sa.Column("type", sa.String(50), nullable=False, server_default="individual"),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default="true"),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.PrimaryKeyConstraint("id", name="pk_tenants"),
+    )
+
+    # --- users (identidad global) ---
     op.create_table(
         "users",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("email", sa.String(255), nullable=False),
         sa.Column("hashed_password", sa.String(255), nullable=True),
         sa.Column("full_name", sa.String(255), nullable=True),
-        sa.Column("role", sa.String(50), nullable=False, server_default="professional"),
+        sa.Column("is_platform_admin", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default="true"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
@@ -33,7 +50,25 @@ def upgrade() -> None:
     )
     op.create_index("ix_users_email", "users", ["email"], unique=True)
 
-    # --- user_passkeys ---
+    # --- memberships (user ↔ tenant + rol) ---
+    op.create_table(
+        "memberships",
+        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("role", sa.String(50), nullable=False),  # owner | professional | assistant
+        sa.Column("status", sa.String(50), nullable=False, server_default="active"),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], name="fk_memberships_tenant_id_tenants", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], name="fk_memberships_user_id_users", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id", name="pk_memberships"),
+        sa.UniqueConstraint("tenant_id", "user_id", name="uq_memberships_tenant_id_user_id"),
+    )
+    op.create_index("ix_memberships_tenant_id", "memberships", ["tenant_id"])
+    op.create_index("ix_memberships_user_id", "memberships", ["user_id"])
+
+    # --- user_passkeys (WebAuthn por dispositivo) ---
     op.create_table(
         "user_passkeys",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -67,16 +102,40 @@ def upgrade() -> None:
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default="true"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.ForeignKeyConstraint(["tenant_id"], ["users.id"], name="fk_patients_tenant_id_users", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], name="fk_patients_tenant_id_tenants", ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id", name="pk_patients"),
     )
     op.create_index("ix_patients_tenant_id", "patients", ["tenant_id"])
+
+    # --- patient_access (acceso clínico dentro del consultorio) ---
+    op.create_table(
+        "patient_access",
+        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("patient_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("professional_user_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("access_type", sa.String(50), nullable=False),  # primary | shared
+        sa.Column("granted_by_user_id", postgresql.UUID(as_uuid=True), nullable=True),
+        sa.Column("granted_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("expires_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("revoked_at", sa.DateTime(timezone=True), nullable=True),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], name="fk_patient_access_tenant_id_tenants", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["patient_id"], ["patients.id"], name="fk_patient_access_patient_id_patients", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["professional_user_id"], ["users.id"], name="fk_patient_access_professional_user_id_users", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["granted_by_user_id"], ["users.id"], name="fk_patient_access_granted_by_user_id_users", ondelete="SET NULL"),
+        sa.PrimaryKeyConstraint("id", name="pk_patient_access"),
+        sa.UniqueConstraint("patient_id", "professional_user_id", name="uq_patient_access_patient_id_professional_user_id"),
+    )
+    op.create_index("ix_patient_access_tenant_id", "patient_access", ["tenant_id"])
+    op.create_index("ix_patient_access_patient_id", "patient_access", ["patient_id"])
+    op.create_index("ix_patient_access_professional_user_id", "patient_access", ["professional_user_id"])
 
     # --- appointments ---
     op.create_table(
         "appointments",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("professional_user_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("patient_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("starts_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("duration_minutes", sa.Integer(), nullable=False, server_default="50"),
@@ -85,11 +144,13 @@ def upgrade() -> None:
         sa.Column("internal_notes", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.ForeignKeyConstraint(["tenant_id"], ["users.id"], name="fk_appointments_tenant_id_users", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], name="fk_appointments_tenant_id_tenants", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["professional_user_id"], ["users.id"], name="fk_appointments_professional_user_id_users", ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["patient_id"], ["patients.id"], name="fk_appointments_patient_id_patients", ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id", name="pk_appointments"),
     )
     op.create_index("ix_appointments_tenant_id", "appointments", ["tenant_id"])
+    op.create_index("ix_appointments_professional_user_id", "appointments", ["professional_user_id"])
     op.create_index("ix_appointments_patient_id", "appointments", ["patient_id"])
     op.create_index("ix_appointments_starts_at", "appointments", ["starts_at"])
 
@@ -98,6 +159,8 @@ def upgrade() -> None:
         "clinical_notes",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("patient_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("author_user_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("appointment_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("input_bullets", sa.Text(), nullable=False),
         sa.Column("content", sa.Text(), nullable=False),
@@ -107,11 +170,15 @@ def upgrade() -> None:
         sa.Column("is_edited", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.ForeignKeyConstraint(["tenant_id"], ["users.id"], name="fk_clinical_notes_tenant_id_users", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], name="fk_clinical_notes_tenant_id_tenants", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["patient_id"], ["patients.id"], name="fk_clinical_notes_patient_id_patients", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["author_user_id"], ["users.id"], name="fk_clinical_notes_author_user_id_users", ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["appointment_id"], ["appointments.id"], name="fk_clinical_notes_appointment_id_appointments", ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id", name="pk_clinical_notes"),
     )
     op.create_index("ix_clinical_notes_tenant_id", "clinical_notes", ["tenant_id"])
+    op.create_index("ix_clinical_notes_patient_id", "clinical_notes", ["patient_id"])
+    op.create_index("ix_clinical_notes_author_user_id", "clinical_notes", ["author_user_id"])
     op.create_index("ix_clinical_notes_appointment_id", "clinical_notes", ["appointment_id"])
 
     # --- payments ---
@@ -129,7 +196,7 @@ def upgrade() -> None:
         sa.Column("notes", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.ForeignKeyConstraint(["tenant_id"], ["users.id"], name="fk_payments_tenant_id_users", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], name="fk_payments_tenant_id_tenants", ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["patient_id"], ["patients.id"], name="fk_payments_patient_id_patients", ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["appointment_id"], ["appointments.id"], name="fk_payments_appointment_id_appointments", ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id", name="pk_payments"),
@@ -138,11 +205,11 @@ def upgrade() -> None:
     op.create_index("ix_payments_patient_id", "payments", ["patient_id"])
     op.create_index("ix_payments_appointment_id", "payments", ["appointment_id"])
 
-    # --- subscriptions ---
+    # --- subscriptions (del consultorio) ---
     op.create_table(
         "subscriptions",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("plan", sa.String(50), nullable=False, server_default="freemium"),
         sa.Column("status", sa.String(50), nullable=False, server_default="active"),
         sa.Column("provider", sa.String(50), nullable=True),
@@ -153,11 +220,11 @@ def upgrade() -> None:
         sa.Column("cancel_at_period_end", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.ForeignKeyConstraint(["user_id"], ["users.id"], name="fk_subscriptions_user_id_users", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], name="fk_subscriptions_tenant_id_tenants", ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id", name="pk_subscriptions"),
         sa.UniqueConstraint("provider_subscription_id", name="uq_subscriptions_provider_subscription_id"),
     )
-    op.create_index("ix_subscriptions_user_id", "subscriptions", ["user_id"])
+    op.create_index("ix_subscriptions_tenant_id", "subscriptions", ["tenant_id"])
 
     # --- note_feedback ---
     op.create_table(
@@ -170,7 +237,7 @@ def upgrade() -> None:
         sa.Column("comment", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.CheckConstraint("rating BETWEEN 1 AND 3", name="ck_note_feedback_rating"),
-        sa.ForeignKeyConstraint(["tenant_id"], ["users.id"], name="fk_note_feedback_tenant_id_users", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], name="fk_note_feedback_tenant_id_tenants", ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["note_id"], ["clinical_notes.id"], name="fk_note_feedback_note_id_clinical_notes", ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id", name="pk_note_feedback"),
     )
@@ -178,10 +245,22 @@ def upgrade() -> None:
     op.create_index("ix_note_feedback_note_id", "note_feedback", ["note_id"])
 
     # ------------------------------------------------------------------ #
-    # RLS — Row-Level Security para tablas con datos sensibles de pacientes
+    # RLS — aislamiento ENTRE consultorios (tenant_id = tenants.id)
     # ------------------------------------------------------------------ #
-    # app.tenant_id se setea al inicio de cada request (ver db.set_tenant())
-    rls_tables = ["patients", "appointments", "clinical_notes", "payments"]
+    # app.tenant_id se setea al inicio de cada request (ver db.set_tenant()).
+    # El aislamiento DENTRO del consultorio (visibilidad clínica por
+    # patient_access) se aplica en la capa de autorización de la app; app.user_id
+    # queda disponible en la sesión para una política RLS más fina a futuro.
+    rls_tables = [
+        "memberships",
+        "patients",
+        "patient_access",
+        "appointments",
+        "clinical_notes",
+        "payments",
+        "subscriptions",
+        "note_feedback",
+    ]
     for table in rls_tables:
         op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
         op.execute(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY")
@@ -193,12 +272,21 @@ def upgrade() -> None:
             """
         )
 
-    # Superuser/service role bypasses RLS — no necesita política adicional.
-    # El connection role de la app usa un rol sin BYPASSRLS.
+    # Superuser/service role bypasses RLS — el connection role de la app usa un
+    # rol sin BYPASSRLS.
 
 
 def downgrade() -> None:
-    rls_tables = ["patients", "appointments", "clinical_notes", "payments"]
+    rls_tables = [
+        "memberships",
+        "patients",
+        "patient_access",
+        "appointments",
+        "clinical_notes",
+        "payments",
+        "subscriptions",
+        "note_feedback",
+    ]
     for table in rls_tables:
         op.execute(f"DROP POLICY IF EXISTS tenant_isolation ON {table}")
         op.execute(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY")
@@ -208,6 +296,9 @@ def downgrade() -> None:
     op.drop_table("payments")
     op.drop_table("clinical_notes")
     op.drop_table("appointments")
+    op.drop_table("patient_access")
     op.drop_table("patients")
     op.drop_table("user_passkeys")
+    op.drop_table("memberships")
     op.drop_table("users")
+    op.drop_table("tenants")

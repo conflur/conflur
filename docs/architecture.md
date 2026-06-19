@@ -70,13 +70,58 @@
 
 **Nivel aplicable: 1 + 2 + 3** (hay usuarios con login y datos clínicos sensibles de terceros)
 
-- Multi-tenancy: `tenant_id` en todas las tablas relevantes
-- RLS en PostgreSQL como última línea de defensa
+- Multi-tenancy: `tenant_id` en todas las tablas relevantes (= `tenants.id`, el consultorio)
+- RLS en PostgreSQL como última línea de defensa — aísla **entre consultorios**
+- Aislamiento **dentro del consultorio** (visibilidad clínica): capa de autorización de la app vía `patient_access` (ver §Tenancy)
 - KM de EIA-1: `tenant_id = "eia1"` — completamente aislado de CRIZA
-- Datos de pacientes nunca se filtran entre profesionales (cada profesional es un tenant o sub-tenant)
 - Política de retención: pendiente de definir antes del primer usuario real
 
 **Decisión D2 [2026-06-17]:** aplicar Seguridad Nivel 3 desde el inicio. Los datos clínicos de pacientes son sensibles. No es negociable postergar multi-tenancy.
+
+**Decisión D14 [2026-06-19]:** la app se conecta con un rol dedicado **`conflur_app` sin `BYPASSRLS`** (`APP_DATABASE_URL`); el rol owner (`neondb_owner`, `DATABASE_URL`) queda **solo para migraciones/admin**.
+**Razón:** se detectó que `neondb_owner` tiene `rolbypassrls = true` — saltea TODO el RLS aunque las tablas tengan `FORCE ROW LEVEL SECURITY`. Si la app corriera con ese rol, el RLS sería decorativo y el aislamiento entre consultorios no existiría. El test `tests/test_tenancy_rls.py` prueba el aislamiento conectándose con el rol sin bypass. **En Railway, `APP_DATABASE_URL` debe apuntar a `conflur_app`.**
+
+---
+
+## Tenancy — modelo de primera clase
+
+El tenant (consultorio) es una **entidad de primera clase**, no `= user_id`. Esto se diseñó completo desde el inicio para no rehacer el modelo cuando llegue un consultorio multi-profesional o una instancia tipo organización.
+
+```
+tenant (consultorio)
+  ├── memberships (usuarios con rol dentro del consultorio)
+  │     ├── owner        → gestiona miembros, billing, agenda
+  │     ├── professional → SUS pacientes y SUS notas (vía patient_access)
+  │     └── assistant    → secretaría: agenda + cobros + contacto; NUNCA la nota clínica
+  └── recursos (patients, appointments, clinical_notes, payments, subscriptions) → tenant_id
+```
+
+- **`users`** = identidad global (login, passkeys). Sin rol propio; el rol vive en `memberships` y es relativo al consultorio. `users.is_platform_admin` es el único rol global (Sebas / soporte).
+- **`tenants`** = consultorio. `type` = `individual` (un profesional = consultorio de un miembro) | `practice` (varios).
+- **`memberships`** = liga user ↔ tenant + rol + estado.
+- **Suscripción** = del consultorio (`subscriptions.tenant_id`), no del usuario — el consultorio paga y el freemium gate se mide por consultorio.
+
+### Dos capas de aislamiento
+
+| Capa | Qué aísla | Mecanismo |
+|---|---|---|
+| Entre consultorios | que el consultorio A nunca vea datos del B | **RLS** sobre `tenant_id` |
+| Dentro del consultorio | quién ve qué paciente/nota | **Autorización** por rol + `patient_access` (capa de app) |
+
+El RLS por `tenant_id` no alcanza dentro del consultorio: los miembros comparten `tenant_id`. La nota clínica la protege `patient_access`.
+
+### Visibilidad clínica (`patient_access`)
+
+- Una nota clínica la ve **quien tiene un `patient_access` activo** sobre el paciente (no vencido, no revocado). La secretaría/admin NUNCA.
+- `access_type='primary'` → un profesional principal por paciente.
+- `access_type='shared'` → **interconsulta**: el principal comparte el paciente con otro profesional de forma explícita, registrada (`granted_by_user_id`), revocable (`revoked_at`) y opcionalmente temporal (`expires_at`). Durante la ventana ambos ven las notas del paciente y cada uno suma la suya.
+- Todo grant/revoke es auditable.
+
+**Decisión D12 [2026-06-19]:** tenant de primera clase (`tenants` + `memberships` + roles owner/professional/assistant), no `tenant_id = user_id`. Suscripción a nivel consultorio.
+**Razón:** un consultorio real tiene varios profesionales + secretaría. Diseñar completo ahora (aunque M0 active solo el camino del profesional individual) evita rehacer el modelo de tenancy — el retrabajo que la regla de capa prohíbe. Mismo modelo sirve a una instancia tipo organización (LegalCo) sin tocar el schema.
+
+**Decisión D13 [2026-06-19]:** visibilidad clínica por `patient_access` (dos capas: RLS entre consultorios + autorización dentro). Interconsulta = compartir explícito, revocable, temporal y auditado.
+**Razón:** dato clínico sagrado (principio 4). El RLS por tenant no protege entre profesionales del mismo consultorio; la nota se protege en la capa de autorización. La interconsulta es un patrón clínico real que necesita contexto compartido acotado.
 
 ---
 
@@ -283,17 +328,20 @@ Esa calificación entra al KM como input para el CEO-agente. No automatizar lo q
 
 ## Auth
 
-- **Solución:** NextAuth + PostgreSQL propio (control total de datos — dato clínico sensible)
+- **Solución:** NextAuth (sesión/JWT) + verificación de credenciales en FastAPI + PostgreSQL propio (control total de datos — dato clínico sensible)
 - **Métodos de login:**
   - Email + contraseña (siempre disponible, fallback obligatorio)
   - Biometría / Passkeys (WebAuthn) — se ofrece al usuario después del primer login para registrar su dispositivo
-- **Librerías:** `@simplewebauthn/server` (backend) + `@simplewebauthn/browser` (frontend)
+- **Dónde vive la lógica:** FastAPI es dueño de la verificación (password + WebAuthn). NextAuth usa un Credentials provider que llama a los endpoints `/auth/*` del backend + estrategia JWT. El JWT lleva `user_id` (+ tenant activo + rol en ese tenant); FastAPI lo valida en cada request y setea el contexto de seguridad (`app.tenant_id`, `app.user_id`) para RLS.
+- **Librerías:** `py_webauthn` (backend, verificación) + `@simplewebauthn/browser` (frontend, ceremonia WebAuthn en el navegador)
 - **Sesiones:** 30 días de duración máxima · expiración por inactividad a los 14 días
-- **Roles:** `professional` (usuario principal) · `admin` (interno Sebas)
 - **Tabla adicional:** `user_passkeys` — almacena credenciales WebAuthn por dispositivo
 
 **Decisión D7 [2026-06-18]:** Passkeys/WebAuthn en M0, no M1.
 **Razón:** implementación de 1-2 días con librerías estándar. UX diferenciador desde el inicio — el profesional entra con la huella entre sesión y sesión, sin tipear contraseña en el celular.
+
+**Decisión D11 [2026-06-19]:** el auth es un **estándar de plataforma**, decidido una vez por EMPRESAS-IA — no una elección de cada instancia. El cliente (no-técnico) nunca elige stack. La verificación de auth vive en el **backend** (FastAPI), no en el frontend.
+**Razón:** (a) replicabilidad — "el backend es dueño del auth y del binding al tenant" es agnóstico al frontend, que es la capa que más varía entre instancias; (b) una sola fuente de verdad para dato sensible (mismo servicio que tiene modelos + RLS verifica credenciales y setea el tenant); (c) cumple la testing rule (auth en pytest). El patrón replicable de Capa 0-1 es `token validado → tenant_id → set_tenant(RLS)`; la elección concreta (NextAuth + passkeys) es Capa 2 de Conflur, implementación de referencia de ese patrón.
 
 ---
 

@@ -79,6 +79,7 @@ El diseño está completo y documentado en `docs/EIA1_Foundation_Document.md`. A
 - [x] **Registrar conflur.com en Cloudflare** — ✅ comprado 2026-06-19
 - [ ] **Crear cycle M0 en Linear** — acción de Sebas (los cycles los crea el usuario manualmente)
 - [ ] **Construir el MVP** — desarrollo puede arrancar (Design Gate 🟡)
+- [ ] **Migrar proyecto Neon `conflur`** de cuenta personal `sebabizzi` a `empresas.ia.dev` — infra debe vivir bajo la cuenta técnica de la plataforma
 
 ---
 

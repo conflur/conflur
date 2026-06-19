@@ -8,13 +8,18 @@ from .base import Base
 
 
 class Subscription(Base):
+    """
+    La suscripción es del consultorio (Tenant), no del usuario individual:
+    el consultorio es quien paga y el freemium gate (pacientes activos) se mide
+    por consultorio.
+    """
     __tablename__ = "subscriptions"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
     )
     plan: Mapped[str] = mapped_column(
         String(50), nullable=False, default="freemium"
@@ -35,4 +40,4 @@ class Subscription(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    user: Mapped["User"] = relationship(back_populates="subscriptions")
+    tenant: Mapped["Tenant"] = relationship(back_populates="subscriptions")

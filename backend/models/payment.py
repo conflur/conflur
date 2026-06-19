@@ -9,7 +9,7 @@ from .base import Base
 
 class Payment(Base):
     """
-    tenant_id = user_id del profesional. RLS habilitado.
+    tenant_id = id del consultorio (Tenant). RLS habilitado.
     Monto en moneda local del profesional (ARS, MXN, COP, etc.).
     """
     __tablename__ = "payments"
@@ -18,7 +18,7 @@ class Payment(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     tenant_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
     )
     patient_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True

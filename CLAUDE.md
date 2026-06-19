@@ -77,8 +77,9 @@ Segunda empresa agéntica de la plataforma EMPRESAS-IA (Capa 2). **Nombre del pr
 | Datos del KM de Conflur | `knowledge_module/` con `tenant_id="eia1"` | Infraestructura compartida, datos aislados |
 | Playbook, Design Gate template | `docs/` — plataforma | Aplica a todos los proyectos |
 | **El producto SaaS** (agenda, notas IA, billing, dashboard) | `eia1/` — Conflur | Específico de profesionales de salud |
-| **Auth** (NextAuth + WebAuthn) | `eia1/` — Conflur | Decisión de Conflur; otra instancia puede elegir otra solución |
-| **Modelos de datos** (patients, appointments, notes, payments) | `eia1/` — Conflur | Dominio de salud privada |
+| **Patrón de auth** (`token validado → tenant_id → set_tenant(RLS)`) | `platform/` (Capa 0-1) | Estándar de plataforma: lo decide EMPRESAS-IA una vez, NO la instancia. El cliente no-técnico nunca elige stack |
+| **Implementación de auth** (NextAuth + passkeys + verificación en FastAPI) | `eia1/` — Conflur | Instancia de referencia del patrón. Lo que varía por instancia es la *forma del tenant* (individuo/organización), no el patrón |
+| **Modelos de datos** (tenants, memberships, patients, appointments, notes, payments) | `eia1/` — Conflur | Dominio de salud privada. Tenancy de primera clase (ver `docs/architecture.md` §Tenancy) |
 | **Skins verticales** (templates de notas por especialidad) | `eia1/` — Conflur | Específicos de cada profesión |
 | **Billing** (Stripe + MercadoPago) | `eia1/` — Conflur | Decisión de Conflur |
 | **Agentes de Conflur** (notas, CEO, CS, crecimiento, finanzas) | `eia1/agents/` — Conflur | Prompts y lógica del dominio de salud |
