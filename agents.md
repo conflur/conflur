@@ -28,9 +28,13 @@ Empresa agéntica (Capa 2 de EMPRESAS-IA) de software B2C para profesionales de 
 
 ## Estado actual
 
-⚠️ **FASE: DISEÑO CERRADO — pendiente construcción**
+⚠️ **FASE: CONSTRUCCIÓN — M0**
 
-El diseño está completo y documentado en `docs/EIA1_Foundation_Document.md`. Aún no hay código. El próximo paso es resolver las decisiones pendientes y arrancar el Design Gate del MVP.
+Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`conflur-production.up.railway.app`), frontend en Vercel, DB Neon con schema aplicado.
+
+**En progreso: SEB-166 (Auth).** Fundación de tenancy ya construida y commiteada:
+- Tenant de primera clase (`tenants` + `memberships` + roles owner/professional/assistant), `patient_access` para visibilidad clínica, RLS en 8 tablas. Ver `docs/architecture.md` §Tenancy y D11–D14.
+- Falta lo propio de auth: endpoints `/auth/*` en FastAPI (password + WebAuthn con `py_webauthn`), NextAuth Credentials+JWT en el frontend, middleware que valida JWT y llama `set_tenant`.
 
 ---
 
@@ -80,6 +84,7 @@ El diseño está completo y documentado en `docs/EIA1_Foundation_Document.md`. A
 - [ ] **Crear cycle M0 en Linear** — acción de Sebas (los cycles los crea el usuario manualmente)
 - [ ] **Construir el MVP** — desarrollo puede arrancar (Design Gate 🟡)
 - [ ] **Migrar proyecto Neon `conflur`** de cuenta personal `sebabizzi` a `empresas.ia.dev` — infra debe vivir bajo la cuenta técnica de la plataforma
+- [ ] **🔴 CRÍTICO — agregar `APP_DATABASE_URL` en Railway** apuntando al rol `conflur_app` (sin bypassrls). Sin esto, en producción la app usa `neondb_owner` que **saltea el RLS** → el aislamiento entre consultorios no existe. Valor en `backend/.env` local. Ver `docs/architecture.md` D14 y memoria `reference_neon_rls_bypass`.
 
 ---
 
