@@ -32,9 +32,11 @@ Empresa agéntica (Capa 2 de EMPRESAS-IA) de software B2C para profesionales de 
 
 Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`conflur-production.up.railway.app`), frontend en Vercel, DB Neon con schema aplicado.
 
-**En progreso: SEB-166 (Auth).** Fundación de tenancy ya construida y commiteada:
-- Tenant de primera clase (`tenants` + `memberships` + roles owner/professional/assistant), `patient_access` para visibilidad clínica, RLS en 8 tablas. Ver `docs/architecture.md` §Tenancy y D11–D14.
-- Falta lo propio de auth: endpoints `/auth/*` en FastAPI (password + WebAuthn con `py_webauthn`), NextAuth Credentials+JWT en el frontend, middleware que valida JWT y llama `set_tenant`.
+**En progreso: SEB-166 (Auth) — backend COMPLETO, falta frontend.**
+- Fundación de tenancy: `tenants` + `memberships` + roles + `patient_access` + RLS en 8 tablas. Ver `docs/architecture.md` §Tenancy y D11–D14.
+- Backend auth (`backend/auth/`): `/auth/register|login|me` (password, bcrypt+JWT) y `/auth/passkey/*` (WebAuthn con `py_webauthn`, challenge en JWT corto). Dependency valida Bearer → `set_tenant` → RLS. 20 tests pasan. En prod OK.
+- **Falta:** frontend NextAuth (Credentials provider que llama a `/auth/*` + JWT strategy) + UI de login/registro + ceremonia passkey con `@simplewebauthn/browser`.
+- **Pendiente prod (cuando el frontend tenga dominio):** setear `WEBAUTHN_RP_ID` y `WEBAUTHN_ORIGIN` en Railway (hoy default `localhost`).
 
 ---
 
