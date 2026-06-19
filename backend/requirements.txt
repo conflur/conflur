@@ -8,6 +8,7 @@ alembic==1.13.3
 asyncpg==0.29.0
 python-jose[cryptography]==3.3.0
 bcrypt==4.2.1
+webauthn==2.8.0
 python-multipart==0.0.9
 litellm==1.46.0
 stripe==10.12.0

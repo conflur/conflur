@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     NEXTAUTH_SECRET: str
     NEXTAUTH_URL: str = "http://localhost:3000"
 
+    # WebAuthn / Passkeys
+    # RP_ID = dominio efectivo (sin esquema ni puerto). Dev: localhost · Prod: conflur.com
+    WEBAUTHN_RP_ID: str = "localhost"
+    WEBAUTHN_RP_NAME: str = "Conflur"
+    # Origin exacto desde donde corre el frontend. Dev: http://localhost:3000 · Prod: https://conflur.com
+    WEBAUTHN_ORIGIN: str = "http://localhost:3000"
+
     # Anthropic / LiteLLM — modelo configurable por agente (default Sonnet 4.6)
     ANTHROPIC_API_KEY: str
     NOTES_MODEL: str = "claude-sonnet-4-6"

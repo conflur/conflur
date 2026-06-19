@@ -58,3 +58,34 @@ def decode_access_token(token: str) -> dict | None:
         return jwt.decode(token, _secret(), algorithms=[ALGORITHM])
     except JWTError:
         return None
+
+
+# --- WebAuthn challenge tokens -------------------------------------------- #
+# El challenge se devuelve al cliente dentro de un JWT corto firmado, y el
+# cliente lo reenvía en el verify. Así el challenge queda ligado al servidor
+# (firma + expiración) sin necesidad de estado en DB ni en memoria — funciona
+# con múltiples instancias. Vida corta (5 min); single-use no se garantiza sin
+# estado (aceptable en M0 por la ventana corta).
+CHALLENGE_EXPIRE_MINUTES = 5
+
+
+def create_challenge_token(*, challenge_b64: str, subject: str, purpose: str) -> str:
+    now = datetime.now(timezone.utc)
+    claims = {
+        "challenge": challenge_b64,
+        "sub": subject,            # user_id (registro) o email (login)
+        "purpose": purpose,        # "passkey_register" | "passkey_login"
+        "iat": now,
+        "exp": now + timedelta(minutes=CHALLENGE_EXPIRE_MINUTES),
+    }
+    return jwt.encode(claims, _secret(), algorithm=ALGORITHM)
+
+
+def decode_challenge_token(token: str, *, purpose: str) -> dict | None:
+    try:
+        claims = jwt.decode(token, _secret(), algorithms=[ALGORITHM])
+    except JWTError:
+        return None
+    if claims.get("purpose") != purpose:
+        return None
+    return claims

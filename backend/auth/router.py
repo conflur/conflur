@@ -10,12 +10,9 @@ from auth.schemas import (
     RegisterRequest, LoginRequest, TokenOut, PrincipalOut, UserOut,
 )
 from auth.dependencies import CurrentPrincipal
+from auth.service import issue_login_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-# Orden de preferencia al elegir el tenant activo cuando el usuario tiene varias
-# membresías (MVP: normalmente una sola).
-_ROLE_PRIORITY = {"owner": 0, "professional": 1, "assistant": 2}
 
 
 def _token_response(user: User, tenant_id, role: str) -> TokenOut:
@@ -82,21 +79,7 @@ async def login(body: LoginRequest):
         if not user.is_active:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuario inactivo")
 
-        # Resolver user → tenant. La policy de memberships permite ver las propias
-        # membresías cuando app.user_id está seteado (bootstrap de login).
-        await session.execute(text("SELECT set_config('app.user_id', :u, true)"), {"u": str(user.id)})
-        memberships = (
-            await session.scalars(
-                select(Membership).where(
-                    Membership.user_id == user.id, Membership.status == "active"
-                )
-            )
-        ).all()
-        if not memberships:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El usuario no tiene un consultorio activo")
-
-        membership = min(memberships, key=lambda m: _ROLE_PRIORITY.get(m.role, 99))
-        return _token_response(user, membership.tenant_id, membership.role)
+        return await issue_login_token(session, user)
 
 
 @router.get("/me", response_model=PrincipalOut)
