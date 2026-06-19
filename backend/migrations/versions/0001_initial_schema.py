@@ -251,8 +251,8 @@ def upgrade() -> None:
     # El aislamiento DENTRO del consultorio (visibilidad clínica por
     # patient_access) se aplica en la capa de autorización de la app; app.user_id
     # queda disponible en la sesión para una política RLS más fina a futuro.
-    rls_tables = [
-        "memberships",
+    # Tablas con aislamiento estricto por tenant activo.
+    tenant_only_tables = [
         "patients",
         "patient_access",
         "appointments",
@@ -261,19 +261,39 @@ def upgrade() -> None:
         "subscriptions",
         "note_feedback",
     ]
-    for table in rls_tables:
+    # NULLIF(..., '') porque current_setting(name, true) devuelve '' (no NULL)
+    # cuando el GUC no fue seteado; ''::uuid lanzaría error. Con NULLIF, sin
+    # tenant activo la comparación da NULL → cero filas (falla cerrado).
+    for table in tenant_only_tables:
         op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
         op.execute(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY")
         op.execute(
             f"""
             CREATE POLICY tenant_isolation ON {table}
-            USING (tenant_id = current_setting('app.tenant_id')::uuid)
-            WITH CHECK (tenant_id = current_setting('app.tenant_id')::uuid)
+            USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+            WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
             """
         )
 
+    # memberships: además del tenant activo, un usuario SIEMPRE puede ver sus
+    # propias membresías. Esto resuelve el bootstrap de login (user → tenant) sin
+    # romper el aislamiento: estando en el tenant A no se ven membresías del B.
+    # WITH CHECK exige tenant activo (alta de miembros solo dentro del tenant).
+    op.execute("ALTER TABLE memberships ENABLE ROW LEVEL SECURITY")
+    op.execute("ALTER TABLE memberships FORCE ROW LEVEL SECURITY")
+    op.execute(
+        """
+        CREATE POLICY tenant_isolation ON memberships
+        USING (
+            tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid
+            OR user_id = NULLIF(current_setting('app.user_id', true), '')::uuid
+        )
+        WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)
+        """
+    )
+
     # Superuser/service role bypasses RLS — el connection role de la app usa un
-    # rol sin BYPASSRLS.
+    # rol sin BYPASSRLS (conflur_app).
 
 
 def downgrade() -> None:
