@@ -43,7 +43,10 @@ Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`co
 **Backend avanzado (sin UI todavía):**
 - **SEB-168 Pacientes** — CRUD + interconsulta (RLS + patient_access). 3 tests.
 - **SEB-175 Verticales** — `Specialty` (catálogo + ficha_schema JSONB) + `SessionType` (prestación, RLS) + `Tenant.specialty_code`; esquema de ficha psicológica + `validate_ficha`; migración 0002 aplicada; endpoints `/specialties` y `/session-types`. 5 tests.
-- Suite total: **28 tests** verdes.
+- **SEB-176 Ficha clínica** — `ClinicalFile` (values JSONB validados contra el ficha_schema) + `GET/PUT /patients/{id}/ficha` con **autorización clínica estricta** (solo patient_access; la secretaría ve el perfil, no la ficha). Migración 0003. 3 tests.
+- Suite total: **31 tests** verdes.
+
+> El ficha_schema de psicología es un **dato editable** (`specialties.ficha_schema`), no código → se ajusta tras validar con un profesional real sin tocar código.
 
 **Diseño v2 consolidado** en `docs/architecture.md` (D15–D20) y Linear reestructurado (SEB-175→182): verticales por esquema, omnicanal de dos lados, dominio financiero (carga por compra + costo-hora + precio inteligente + devengado/percibido), facturación ARCA, fichas + seguridad + export durable, agentes core→premium.
 
