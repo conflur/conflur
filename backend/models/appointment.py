@@ -42,5 +42,5 @@ class Appointment(Base):
     )
 
     patient: Mapped["Patient"] = relationship(back_populates="appointments")
-    clinical_notes: Mapped[list["ClinicalNote"]] = relationship(back_populates="appointment", cascade="all, delete-orphan")
+    clinical_notes: Mapped[list["ClinicalNote"]] = relationship(back_populates="appointment")
     payments: Mapped[list["Payment"]] = relationship(back_populates="appointment")
