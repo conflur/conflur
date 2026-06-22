@@ -44,9 +44,13 @@ Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`co
 - **SEB-168 Pacientes** — CRUD + interconsulta (RLS + patient_access). 3 tests.
 - **SEB-175 Verticales** — `Specialty` (catálogo + ficha_schema JSONB) + `SessionType` (prestación, RLS) + `Tenant.specialty_code`; esquema de ficha psicológica + `validate_ficha`; migración 0002 aplicada; endpoints `/specialties` y `/session-types`. 5 tests.
 - **SEB-176 Ficha clínica** — `ClinicalFile` (values JSONB validados contra el ficha_schema) + `GET/PUT /patients/{id}/ficha` con **autorización clínica estricta** (solo patient_access; la secretaría ve el perfil, no la ficha). Migración 0003. 3 tests.
-- Suite total: **31 tests** verdes.
+- **SEB-165 LiteLLM** (✅ Done) — `llm/client.py`: LLMClient backend inyectable, modelo por `.env`, tokens. 2 tests.
+- **SEB-169 Notas IA** — agente `agents/notes.py` (bullets→nota) + `patients/notes.py` (generate/guardar/listar/feedback) con acceso clínico. Migración 0004 (appointment_id opcional). 5 tests.
+- Suite total: **36 tests** verdes.
 
 > El ficha_schema de psicología es un **dato editable** (`specialties.ficha_schema`), no código → se ajusta tras validar con un profesional real sin tocar código.
+
+> ⚠️ **Notas IA en vivo requieren `ANTHROPIC_API_KEY`** (vacía en `.env` y Railway). Tests usan LLM fake. Crear cuenta Anthropic bajo empresas.ia.dev y setear la key (local + Railway) para ver la generación real.
 
 **Diseño v2 consolidado** en `docs/architecture.md` (D15–D20) y Linear reestructurado (SEB-175→182): verticales por esquema, omnicanal de dos lados, dominio financiero (carga por compra + costo-hora + precio inteligente + devengado/percibido), facturación ARCA, fichas + seguridad + export durable, agentes core→premium.
 
