@@ -7,6 +7,7 @@ from .session_type import SessionType
 from .passkey import UserPasskey
 from .patient import Patient
 from .patient_access import PatientAccess
+from .clinical_file import ClinicalFile
 from .appointment import Appointment
 from .note import ClinicalNote
 from .payment import Payment
@@ -23,6 +24,7 @@ __all__ = [
     "UserPasskey",
     "Patient",
     "PatientAccess",
+    "ClinicalFile",
     "Appointment",
     "ClinicalNote",
     "Payment",
