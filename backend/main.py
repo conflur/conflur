@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from config import settings
 from auth.router import router as auth_router
 from auth.passkeys import router as passkey_router
+from patients.router import router as patients_router
 
 
 @asynccontextmanager
@@ -29,6 +30,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(passkey_router)
+app.include_router(patients_router)
 
 
 @app.get("/health")
