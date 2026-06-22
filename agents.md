@@ -32,11 +32,14 @@ Empresa agéntica (Capa 2 de EMPRESAS-IA) de software B2C para profesionales de 
 
 Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`conflur-production.up.railway.app`), frontend en Vercel, DB Neon con schema aplicado.
 
-**En progreso: SEB-166 (Auth) — backend COMPLETO, falta frontend.**
+**SEB-166 (Auth) — código COMPLETO (backend + frontend), falta verificación e2e + wiring de prod.**
 - Fundación de tenancy: `tenants` + `memberships` + roles + `patient_access` + RLS en 8 tablas. Ver `docs/architecture.md` §Tenancy y D11–D14.
-- Backend auth (`backend/auth/`): `/auth/register|login|me` (password, bcrypt+JWT) y `/auth/passkey/*` (WebAuthn con `py_webauthn`, challenge en JWT corto). Dependency valida Bearer → `set_tenant` → RLS. 20 tests pasan. En prod OK.
-- **Falta:** frontend NextAuth (Credentials provider que llama a `/auth/*` + JWT strategy) + UI de login/registro + ceremonia passkey con `@simplewebauthn/browser`.
-- **Pendiente prod (cuando el frontend tenga dominio):** setear `WEBAUTHN_RP_ID` y `WEBAUTHN_ORIGIN` en Railway (hoy default `localhost`).
+- Backend (`backend/auth/`): `/auth/register|login|me` (password, bcrypt+JWT) y `/auth/passkey/*` (WebAuthn con `py_webauthn`). Dependency valida Bearer → `set_tenant` → RLS. 20 tests pasan. En prod OK.
+- Frontend (`frontend/src`): NextAuth v4 (Credentials password + passkey), `/login`, `/register`, `/dashboard` protegido, middleware, `@simplewebauthn/browser`. `next build` limpio.
+- **Aún NO verificado end-to-end en navegador** (register→login→passkey). Recomendado smoke test local (`npm run dev` + backend en :8000) antes de marcar Done.
+- **Wiring de prod pendiente (necesita el dominio del frontend):**
+  - Vercel: setear `NEXTAUTH_SECRET` (real) y `NEXTAUTH_URL` (dominio Vercel).
+  - Railway backend: agregar el origin del frontend a `ALLOWED_ORIGINS` (formato JSON list) — las llamadas register/passkey van browser→backend (CORS). Y `WEBAUTHN_RP_ID`/`WEBAUTHN_ORIGIN` = dominio del frontend (hoy default localhost).
 
 ---
 
