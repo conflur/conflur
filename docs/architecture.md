@@ -373,6 +373,64 @@ Separado de los medios de pago (cómo paga el cliente) — esto es cómo llega e
 
 ---
 
+## Diseño de producto v2 (2026-06-22)
+
+> Consolidación del diseño tras definir el alcance real: vertical de salud multi-especialidad, con núcleo (agenda + fichas + finanzas), capa omnicanal y capa agéntica. Referencias usadas: sistema financiero de odontólogos (ver `App Gestión Financiera Odontólogos`) + curso "Cómo administrar tu consultorio" (metodología de costos y precios) + análisis de Aikestar (mecánicas) + investigación de ficha clínica psicológica + Ley 26.529.
+
+### Verticales por esquema
+
+El producto es **plataforma-core + skin vertical**. Lo que varía por especialidad (psicólogo, kinesiólogo, nutricionista…) se modela como **configuración por esquema**, no como código nuevo:
+- **Ficha clínica**: definición de campos por especialidad (JSONB validado contra el esquema).
+- **Tipos de sesión/prestación** (reemplaza "tratamiento"): duración + precio + costo variable (mínimo en psicología).
+- **Plantillas de nota** y terminología.
+
+**Decisión D15 [2026-06-22]:** especialidad/vertical como entidad de primera clase con ficha y prestaciones **dirigidas por esquema** (JSONB). Sumar una vertical = cargar un esquema, no una migración. La evolución por sesión va en tabla estructurada (`clinical_notes`).
+
+### Omnicanal de dos lados
+
+No es un canal: son **dos relaciones** con canales distintos, sobre **una capa de ingesta común** (mensaje → intención → entidad):
+- **Profesional ↔ app/agentes → Telegram** (gratis, inmediato): cargar ficha, agendar, consultar finanzas.
+- **App ↔ paciente → WhatsApp** (donde está el paciente): recordatorios y confirmación de turnos.
+
+**Decisión D16 [2026-06-22]:** omnicanal como capa transversal con dos lados. Se arranca por el lado profesional (Telegram); el lado paciente (WhatsApp) entra con los recordatorios de agenda. Backend de ingesta normalizada único para ambos.
+
+### Dominio financiero
+
+Motor de **contabilidad de gestión** (no un registro de gastos). Conceptos núcleo (vertical-agnósticos):
+
+- **Devengado vs percibido**: ingreso devengado (cuándo se prestó) ≠ cobro percibido (cuándo entró la plata); gasto devengado ≠ pago. Habilita **Estado de Resultado** (devengado) y **Flujo de Caja** (percibido) por separado.
+- **Carga por compra (puerta única)**: todo gasto entra como una **compra fechada** y su *tipo* deriva el destino — **bien durable** → activo + plazo → **amortización** mensual; **costo fijo** (alquiler, sueldo del profesional, servicios, abonos, seguros, impuestos) → suma al fijo del mes; **insumo** → costo variable. Esto da **historial natural** (cada cambio es un registro nuevo, sin edición destructiva) y una sola pantalla de carga. Costos recurrentes (alquiler, sueldo) se materializan como registro fechado por mes vía "gasto recurrente" (a confirmar en el modelado).
+- **Costo Hora/Consulta** = (costos fijos del mes, **incluido el sueldo del profesional como costo**, + amortizaciones) ÷ horas productivas.
+- **Precio inteligente** = (Costo Hora × duración + costos variables directos) × (1 + margen deseado). Precio desde el costo, no por intuición.
+- **Metas + KPIs**: metas SMART + metas anuales (margen neto, ticket promedio, rentabilidad/hora); KPIs estándar (% cobro, costo por paciente, ocupación, atenciones) + personalizables por fórmula.
+- **Presupuesto** anual proyectado con inflación compuesta (vs real).
+- **Excedentes**: ahorro, amortizaciones, cobros anticipados, excedente de caja.
+- **Planes de cuotas** (pacientes y proveedores).
+- **Matriz de Salud Financiera 2×2** (Rentabilidad × Caja → verde/amarillo/naranja/rojo) como indicador central.
+
+Adaptación psicología: sin insumos/inventario relevantes; "hora sillón" → **"hora de consulta"**; el costo principal es estructura + el propio tiempo del profesional.
+
+**Decisión D17 [2026-06-22]:** dominio financiero completo con devengado/percibido + **carga por compra** (deriva amortización/fijo/variable) + costo-hora + precio inteligente + ER/FC/metas/KPIs/presupuesto/excedentes/cuotas. Re-keyed a `tenant_id` (no `user_id` — ya tenemos tenancy de primera clase, lo que el referente tenía como deuda v2). Mejora sobre el referente: se reemplaza el setup+edición mensual de costos fijos (pierde historial) por la carga por compra (historial natural).
+
+### Facturación electrónica
+
+**Decisión D18 [2026-06-22]:** facturación electrónica como capa **abstracta país-agnóstica**, con **ARCA/AFIP (Argentina, WSFE)** como primera implementación desde M0. Otros países (CFDI MX, DIAN CO) en v2. Separar siempre: (a) Conflur le cobra al profesional (suscripción Stripe/MP) vs (b) el profesional factura a sus pacientes (este módulo).
+
+### Fichas clínicas: seguridad y portabilidad
+
+- **Estructura** (psicología, base): identificación + obra social · motivo de consulta · anamnesis (desarrollo, antecedentes personales/medicación, familiares, **riesgo suicida** como campo de primera clase) · perfil social · evaluación inicial · diagnóstico (DSM-5/CIE) · plan de tratamiento · evolución por sesión.
+- **Seguridad (prioridad máxima)**: RLS por tenant + `patient_access` (visibilidad clínica) + rol sin bypassrls + FORCE RLS (ya implementado). Contenido clínico **nunca a logs ni a prompts sin filtrar**. Audit de accesos clínicos. Cifrado a nivel de campo del texto libre: evaluado, **diferido** (Neon ya cifra at-rest; el agente necesita texto plano para procesar) — revisar post-MVP.
+- **Portabilidad / retención (Ley 26.529)**: el profesional es "depositario" de la HC por **10 años**. Export **durable e imprimible** (PDF/A + datos crudos JSON), periódico y al darse de baja o si Conflur cierra. Borrado siempre lógico, nunca físico. Es además diferencial de confianza.
+- **Consentimiento informado**: **parqueado** por decisión de negocio (se firma en papel, presencial). El modelo queda preparado para registrarlo a futuro sin retrabajo. Nota: la Ley 26.529 lo regula como parte de la HC — revisitar si se ofrece a escala.
+
+**Decisión D19 [2026-06-22]:** seguridad clínica como prioridad no negociable (dos capas ya implementadas) + **export durable de fichas** (PDF/A + JSON) como requisito de primera clase por la Ley 26.529. Consentimiento digital parqueado (papel presencial).
+
+### Capa agéntica (core → premium)
+
+**Decisión D20 [2026-06-22]:** diseñar el **contrato de agente** como estándar de plataforma (input tipado, acceso al KM con `tenant_id`, tracking de tokens) una vez. Construir primero el **agente de notas** (core differentiator). Los agentes de **MKT, agenda y finanzas** se validan en Conflur y luego se ofrecen como **versiones premium** (upsell). Esto materializa el norte de EMPRESAS-IA: la instancia valida que el modelo agéntico es replicable.
+
+---
+
 ## Decisiones pendientes (bloquean inicio de construcción)
 
 | # | Decisión | Opciones | Bloqueante para |
