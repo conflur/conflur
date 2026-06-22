@@ -32,14 +32,15 @@ Empresa agéntica (Capa 2 de EMPRESAS-IA) de software B2C para profesionales de 
 
 Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`conflur-production.up.railway.app`), frontend en Vercel, DB Neon con schema aplicado.
 
-**SEB-166 (Auth) — código COMPLETO (backend + frontend), falta verificación e2e + wiring de prod.**
+**SEB-166 (Auth) — ✅ DONE, verificado en prod (`https://conflur.vercel.app`).**
 - Fundación de tenancy: `tenants` + `memberships` + roles + `patient_access` + RLS en 8 tablas. Ver `docs/architecture.md` §Tenancy y D11–D14.
-- Backend (`backend/auth/`): `/auth/register|login|me` (password, bcrypt+JWT) y `/auth/passkey/*` (WebAuthn con `py_webauthn`). Dependency valida Bearer → `set_tenant` → RLS. 20 tests pasan. En prod OK.
-- Frontend (`frontend/src`): NextAuth v4 (Credentials password + passkey), `/login`, `/register`, `/dashboard` protegido, middleware, `@simplewebauthn/browser`. `next build` limpio.
-- **Aún NO verificado end-to-end en navegador** (register→login→passkey). Recomendado smoke test local (`npm run dev` + backend en :8000) antes de marcar Done.
-- **Wiring de prod pendiente (necesita el dominio del frontend):**
-  - Vercel: setear `NEXTAUTH_SECRET` (real) y `NEXTAUTH_URL` (dominio Vercel).
-  - Railway backend: agregar el origin del frontend a `ALLOWED_ORIGINS` (formato JSON list) — las llamadas register/passkey van browser→backend (CORS). Y `WEBAUTHN_RP_ID`/`WEBAUTHN_ORIGIN` = dominio del frontend (hoy default localhost).
+- Backend (`backend/auth/`): `/auth/register|login|me` (password, bcrypt+JWT) y `/auth/passkey/*` (WebAuthn con `py_webauthn`). Dependency valida Bearer → `set_tenant` → RLS. 20 tests pasan.
+- Frontend (`frontend/src`): NextAuth v4 (Credentials password + passkey), `/login`, `/register`, `/dashboard` protegido, middleware, `@simplewebauthn/browser`.
+- El backend deriva CORS + WebAuthn RP_ID/origin de una sola var `FRONTEND_URL`.
+- Wiring de prod aplicado: Vercel (`NEXTAUTH_SECRET`, `NEXTAUTH_URL`), Railway (`FRONTEND_URL`, `APP_DATABASE_URL` rol sin bypassrls, `NEXTAUTH_SECRET` real).
+- Flujo probado en navegador: register→dashboard, login password, activar passkey, login con passkey. Todo OK.
+
+**Próximo:** features del MVP. Sugerido SEB-167 (agenda) o SEB-168 (pacientes) — primeros que usan el RLS/tenant en endpoints reales. SEB-165 (LiteLLM) destraba SEB-169 (notas IA).
 
 ---
 
