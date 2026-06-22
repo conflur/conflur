@@ -40,7 +40,14 @@ Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`co
 - Wiring de prod aplicado: Vercel (`NEXTAUTH_SECRET`, `NEXTAUTH_URL`), Railway (`FRONTEND_URL`, `APP_DATABASE_URL` rol sin bypassrls, `NEXTAUTH_SECRET` real).
 - Flujo probado en navegador: register→dashboard, login password, activar passkey, login con passkey. Todo OK.
 
-**Próximo:** features del MVP. Sugerido SEB-167 (agenda) o SEB-168 (pacientes) — primeros que usan el RLS/tenant en endpoints reales. SEB-165 (LiteLLM) destraba SEB-169 (notas IA).
+**Backend avanzado (sin UI todavía):**
+- **SEB-168 Pacientes** — CRUD + interconsulta (RLS + patient_access). 3 tests.
+- **SEB-175 Verticales** — `Specialty` (catálogo + ficha_schema JSONB) + `SessionType` (prestación, RLS) + `Tenant.specialty_code`; esquema de ficha psicológica + `validate_ficha`; migración 0002 aplicada; endpoints `/specialties` y `/session-types`. 5 tests.
+- Suite total: **28 tests** verdes.
+
+**Diseño v2 consolidado** en `docs/architecture.md` (D15–D20) y Linear reestructurado (SEB-175→182): verticales por esquema, omnicanal de dos lados, dominio financiero (carga por compra + costo-hora + precio inteligente + devengado/percibido), facturación ARCA, fichas + seguridad + export durable, agentes core→premium.
+
+**Próximo sugerido:** SEB-176 (ficha clínica por esquema — guardar/validar valores de la ficha del paciente, usa el schema de SEB-175) o SEB-167 (agenda). Luego SEB-165→169 (LiteLLM→notas IA, core). Pasada de UI al final.
 
 ---
 
