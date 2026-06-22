@@ -23,7 +23,7 @@ export default function LoginPage() {
       setError("Email o contraseña incorrectos");
       return;
     }
-    router.push("/dashboard");
+    router.push("/pacientes");
   }
 
   async function handlePasskey() {
@@ -37,7 +37,7 @@ export default function LoginPage() {
       const token = await passkeyLogin(email);
       const res = await signIn("passkey", { accessToken: token, redirect: false });
       if (res?.error) throw new Error();
-      router.push("/dashboard");
+      router.push("/pacientes");
     } catch {
       setError("No se pudo entrar con passkey");
     } finally {

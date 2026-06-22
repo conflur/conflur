@@ -23,7 +23,7 @@ export default function RegisterPage() {
       // Establecer la sesión de NextAuth con las mismas credenciales.
       const res = await signIn("password", { email, password, redirect: false });
       if (res?.error) throw new Error("No se pudo iniciar sesión tras el registro");
-      router.push("/dashboard");
+      router.push("/pacientes");
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         setError("Ese email ya está registrado");
