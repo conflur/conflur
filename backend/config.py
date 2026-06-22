@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from pydantic_settings import BaseSettings
 
 
@@ -21,12 +23,12 @@ class Settings(BaseSettings):
     NEXTAUTH_SECRET: str
     NEXTAUTH_URL: str = "http://localhost:3000"
 
-    # WebAuthn / Passkeys
-    # RP_ID = dominio efectivo (sin esquema ni puerto). Dev: localhost · Prod: conflur.com
-    WEBAUTHN_RP_ID: str = "localhost"
+    # Frontend — ÚNICA variable a setear por entorno en el backend. De acá se
+    # derivan CORS, WebAuthn origin y RP_ID. Dev: http://localhost:3000 ·
+    # Prod: dominio del frontend en Vercel.
+    FRONTEND_URL: str = "http://localhost:3000"
+
     WEBAUTHN_RP_NAME: str = "Conflur"
-    # Origin exacto desde donde corre el frontend. Dev: http://localhost:3000 · Prod: https://conflur.com
-    WEBAUTHN_ORIGIN: str = "http://localhost:3000"
 
     # Anthropic / LiteLLM — modelo configurable por agente (default Sonnet 4.6)
     ANTHROPIC_API_KEY: str
@@ -49,8 +51,21 @@ class Settings(BaseSettings):
     # Frontend (en backend/.env para tener un único archivo de config en local)
     NEXT_PUBLIC_API_URL: str = "http://localhost:8000"
 
-    # CORS
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000"]
+    # --- Derivados de FRONTEND_URL (no se setean por env) ------------------- #
+    @property
+    def allowed_origins(self) -> list[str]:
+        """Origins permitidos para CORS: el frontend + localhost para dev."""
+        return list(dict.fromkeys([self.FRONTEND_URL, "http://localhost:3000"]))
+
+    @property
+    def webauthn_origin(self) -> str:
+        """Origin exacto esperado en la ceremonia WebAuthn."""
+        return self.FRONTEND_URL
+
+    @property
+    def webauthn_rp_id(self) -> str:
+        """RP ID = hostname del frontend (sin esquema ni puerto)."""
+        return urlparse(self.FRONTEND_URL).hostname or "localhost"
 
     class Config:
         env_file = ".env"

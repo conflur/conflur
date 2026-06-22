@@ -67,7 +67,7 @@ async def test_register_options_returns_options_and_challenge(client, cleanup_em
     assert r.status_code == 200, r.text
     data = r.json()
     assert "challenge_token" in data
-    assert data["options"]["rp"]["id"] == settings.WEBAUTHN_RP_ID
+    assert data["options"]["rp"]["id"] == settings.webauthn_rp_id
     assert "challenge" in data["options"]
     # el challenge_token es un token de propósito passkey_register válido
     assert decode_challenge_token(data["challenge_token"], purpose="passkey_register") is not None

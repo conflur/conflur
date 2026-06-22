@@ -60,7 +60,7 @@ async def register_options(principal: CurrentPrincipal):
         ).all()
 
     options = generate_registration_options(
-        rp_id=settings.WEBAUTHN_RP_ID,
+        rp_id=settings.webauthn_rp_id,
         rp_name=settings.WEBAUTHN_RP_NAME,
         user_id=str(principal.user.id).encode("utf-8"),
         user_name=principal.user.email,
@@ -87,8 +87,8 @@ async def register_verify(body: VerifyRegistration, principal: CurrentPrincipal)
         verification = verify_registration_response(
             credential=json.dumps(body.credential),
             expected_challenge=base64url_to_bytes(claims["challenge"]),
-            expected_rp_id=settings.WEBAUTHN_RP_ID,
-            expected_origin=settings.WEBAUTHN_ORIGIN,
+            expected_rp_id=settings.webauthn_rp_id,
+            expected_origin=settings.webauthn_origin,
         )
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No se pudo verificar la passkey")
@@ -121,7 +121,7 @@ async def login_options(body: LoginOptionsRequest):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No hay passkeys para este email")
 
     options = generate_authentication_options(
-        rp_id=settings.WEBAUTHN_RP_ID,
+        rp_id=settings.webauthn_rp_id,
         allow_credentials=[
             PublicKeyCredentialDescriptor(id=p.credential_id) for p in passkeys
         ],
@@ -159,8 +159,8 @@ async def login_verify(body: VerifyAuthentication):
             verification = verify_authentication_response(
                 credential=json.dumps(body.credential),
                 expected_challenge=base64url_to_bytes(claims["challenge"]),
-                expected_rp_id=settings.WEBAUTHN_RP_ID,
-                expected_origin=settings.WEBAUTHN_ORIGIN,
+                expected_rp_id=settings.webauthn_rp_id,
+                expected_origin=settings.webauthn_origin,
                 credential_public_key=passkey.public_key,
                 credential_current_sign_count=passkey.sign_count,
             )
