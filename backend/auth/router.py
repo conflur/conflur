@@ -49,6 +49,7 @@ async def register(body: RegisterRequest):
         tenant = Tenant(
             name=body.practice_name or f"Consultorio de {body.full_name}",
             type="individual",
+            specialty_code=body.specialty_code,
         )
         session.add_all([user, tenant])
         await session.flush()  # obtiene user.id y tenant.id

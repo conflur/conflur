@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, DateTime, Boolean, func
+from sqlalchemy import String, DateTime, Boolean, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -30,6 +30,11 @@ class Tenant(Base):
     type: Mapped[str] = mapped_column(
         String(50), nullable=False, default="individual"
     )  # individual | practice
+    # Vertical del consultorio (define la ficha y las prestaciones). MVP: una por
+    # tenant; multi-especialidad (clínica) se contempla a futuro.
+    specialty_code: Mapped[str | None] = mapped_column(
+        String(50), ForeignKey("specialties.code", ondelete="RESTRICT"), nullable=True
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -41,3 +46,4 @@ class Tenant(Base):
     memberships: Mapped[list["Membership"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     patients: Mapped[list["Patient"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     subscriptions: Mapped[list["Subscription"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
+    session_types: Mapped[list["SessionType"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")

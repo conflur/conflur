@@ -9,6 +9,8 @@ class RegisterRequest(BaseModel):
     full_name: str = Field(min_length=1, max_length=255)
     # Nombre del consultorio. Si no se da, se deriva del nombre del profesional.
     practice_name: str | None = Field(default=None, max_length=255)
+    # Vertical del consultorio. MVP: psicología por default.
+    specialty_code: str = Field(default="psicologia", max_length=50)
 
 
 class LoginRequest(BaseModel):
