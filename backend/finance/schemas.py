@@ -94,6 +94,58 @@ class MonthlySettingOut(BaseModel):
         from_attributes = True
 
 
+class IncomeCreate(BaseModel):
+    fecha: date
+    amount: float = Field(gt=0)
+    patient_id: uuid.UUID | None = None
+    professional_user_id: uuid.UUID | None = None
+    session_type_id: uuid.UUID | None = None
+    appointment_id: uuid.UUID | None = None
+    currency: str | None = Field(default=None, max_length=10)
+    notes: str | None = None
+
+
+class IncomeOut(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    fecha: date
+    patient_id: uuid.UUID | None
+    professional_user_id: uuid.UUID | None
+    session_type_id: uuid.UUID | None
+    appointment_id: uuid.UUID | None
+    amount: float
+    currency: str | None
+    notes: str | None
+
+    class Config:
+        from_attributes = True
+
+
+class CollectionCreate(BaseModel):
+    fecha: date
+    amount: float = Field(gt=0)
+    patient_id: uuid.UUID | None = None
+    income_record_id: uuid.UUID | None = None
+    payment_method: str | None = Field(default=None, max_length=50)
+    currency: str | None = Field(default=None, max_length=10)
+    notes: str | None = None
+
+
+class CollectionOut(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    fecha: date
+    patient_id: uuid.UUID | None
+    income_record_id: uuid.UUID | None
+    amount: float
+    currency: str | None
+    payment_method: str | None
+    notes: str | None
+
+    class Config:
+        from_attributes = True
+
+
 class CostoHoraOut(BaseModel):
     year: int
     month: int

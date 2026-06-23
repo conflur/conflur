@@ -110,6 +110,54 @@ async def test_costo_hora_sin_setup_needs_setup(client, cleanup):
     assert r.json()["costo_hora"] is None
 
 
+async def test_ingresos_y_cobros(client, cleanup):
+    token = await _register(client, cleanup)
+    pid = (await client.post("/patients", headers=_auth(token), json={"full_name": "Pac Fin"})).json()["id"]
+
+    # ingreso devengado
+    r = await client.post("/finanzas/ingresos", headers=_auth(token), json={
+        "fecha": "2026-03-05", "amount": 8000, "patient_id": pid, "currency": "ARS",
+    })
+    assert r.status_code == 201, r.text
+    inc_id = r.json()["id"]
+
+    # cobro percibido (parcial), vinculado al ingreso
+    r = await client.post("/finanzas/cobros", headers=_auth(token), json={
+        "fecha": "2026-03-05", "amount": 5000, "patient_id": pid, "income_record_id": inc_id, "payment_method": "transfer",
+    })
+    assert r.status_code == 201, r.text
+
+    # listados por rango
+    r = await client.get("/finanzas/ingresos", params={"desde": "2026-03-01", "hasta": "2026-03-31"}, headers=_auth(token))
+    assert any(i["id"] == inc_id for i in r.json())
+    r = await client.get("/finanzas/cobros", params={"desde": "2026-03-01", "hasta": "2026-03-31"}, headers=_auth(token))
+    assert len(r.json()) == 1 and r.json()[0]["amount"] == 5000.0
+
+
+async def test_finanzas_requiere_rol_operativo(client, cleanup):
+    """Un professional (no owner/assistant) no accede a finanzas → 403."""
+    import uuid as _uuid
+    from sqlalchemy.ext.asyncio import create_async_engine as _cae
+    from sqlalchemy import text as _text
+    from auth.security import hash_password as _hash
+
+    owner_token = await _register(client, cleanup)
+    tenant_id = (await client.get("/auth/me", headers=_auth(owner_token))).json()["tenant_id"]
+    email_prof = f"fin_{_uuid.uuid4().hex}@example.com"
+    cleanup.append(email_prof)
+    eng = _cae(settings.DATABASE_URL, connect_args={"ssl": "require"})
+    async with eng.begin() as conn:
+        uid = _uuid.uuid4()
+        await conn.execute(_text("INSERT INTO users (id,email,hashed_password,full_name,is_platform_admin,is_active) VALUES (:i,:e,:p,'Prof',false,true)"),
+                           {"i": str(uid), "e": email_prof, "p": _hash("contraseña-segura-123")})
+        await conn.execute(_text("INSERT INTO memberships (id,tenant_id,user_id,role,status) VALUES (:i,:t,:u,'professional','active')"),
+                           {"i": str(_uuid.uuid4()), "t": tenant_id, "u": str(uid)})
+    await eng.dispose()
+    prof_token = (await client.post("/auth/login", json={"email": email_prof, "password": "contraseña-segura-123"})).json()["access_token"]
+    r = await client.get("/finanzas/costo-hora", params={"year": 2026, "month": 3}, headers=_auth(prof_token))
+    assert r.status_code == 403
+
+
 async def test_finance_isolation_between_tenants(client, cleanup):
     token_a = await _register(client, cleanup)
     token_b = await _register(client, cleanup)

@@ -4,7 +4,7 @@ import pytest
 from models import (
     Base, Tenant, User, Membership, UserPasskey,
     Patient, PatientAccess, Appointment, ClinicalNote,
-    Payment, Subscription, NoteFeedback,
+    Subscription, NoteFeedback,
 )
 
 pytestmark = pytest.mark.unit
@@ -12,7 +12,7 @@ pytestmark = pytest.mark.unit
 # Tablas tenant-scoped: tenant_id debe apuntar a tenants.id y tener RLS.
 TENANT_SCOPED = [
     Membership, Patient, PatientAccess, Appointment,
-    ClinicalNote, Payment, Subscription, NoteFeedback,
+    ClinicalNote, Subscription, NoteFeedback,
 ]
 
 

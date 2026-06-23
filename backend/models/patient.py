@@ -39,6 +39,5 @@ class Patient(Base):
 
     tenant: Mapped["Tenant"] = relationship(back_populates="patients")
     appointments: Mapped[list["Appointment"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
-    payments: Mapped[list["Payment"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
     access_grants: Mapped[list["PatientAccess"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
     clinical_file: Mapped["ClinicalFile"] = relationship(back_populates="patient", uselist=False, cascade="all, delete-orphan")

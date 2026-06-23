@@ -10,7 +10,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 
-from models import Expense, RecurringExpense, MonthlySetting
+from datetime import date as date_type
+
+from models import Expense, RecurringExpense, MonthlySetting, IncomeRecord, CollectionRecord
 from auth.dependencies import CurrentPrincipal, TenantSession
 from auth.schemas import PrincipalOut
 from patients.access import OPERATIONAL_ROLES
@@ -18,6 +20,7 @@ from finance.schemas import (
     ExpenseCreate, ExpenseUpdate, ExpenseOut,
     RecurringExpenseCreate, RecurringExpenseOut, RecurringChangeAmount,
     MonthlySettingUpsert, MonthlySettingOut, CostoHoraOut, TIPOS,
+    IncomeCreate, IncomeOut, CollectionCreate, CollectionOut,
 )
 from finance.service import costo_hora
 
@@ -155,6 +158,48 @@ async def get_monthly_setting(year: int, month: int, principal: FinancePrincipal
     if setting is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sin configuración para ese mes")
     return MonthlySettingOut.model_validate(setting)
+
+
+# ------------------------------------------------- ingresos (devengado) ----- #
+@router.post("/ingresos", response_model=IncomeOut, status_code=status.HTTP_201_CREATED)
+async def create_income(body: IncomeCreate, principal: FinancePrincipal, session: TenantSession):
+    inc = IncomeRecord(tenant_id=principal.tenant_id, **body.model_dump())
+    session.add(inc)
+    await session.commit()
+    return IncomeOut.model_validate(inc)
+
+
+@router.get("/ingresos", response_model=list[IncomeOut])
+async def list_income(principal: FinancePrincipal, session: TenantSession,
+                      desde: date_type | None = None, hasta: date_type | None = None):
+    stmt = select(IncomeRecord)
+    if desde:
+        stmt = stmt.where(IncomeRecord.fecha >= desde)
+    if hasta:
+        stmt = stmt.where(IncomeRecord.fecha <= hasta)
+    rows = (await session.scalars(stmt.order_by(IncomeRecord.fecha.desc()))).all()
+    return [IncomeOut.model_validate(i) for i in rows]
+
+
+# ------------------------------------------------- cobros (percibido) ------- #
+@router.post("/cobros", response_model=CollectionOut, status_code=status.HTTP_201_CREATED)
+async def create_collection(body: CollectionCreate, principal: FinancePrincipal, session: TenantSession):
+    col = CollectionRecord(tenant_id=principal.tenant_id, **body.model_dump())
+    session.add(col)
+    await session.commit()
+    return CollectionOut.model_validate(col)
+
+
+@router.get("/cobros", response_model=list[CollectionOut])
+async def list_collections(principal: FinancePrincipal, session: TenantSession,
+                           desde: date_type | None = None, hasta: date_type | None = None):
+    stmt = select(CollectionRecord)
+    if desde:
+        stmt = stmt.where(CollectionRecord.fecha >= desde)
+    if hasta:
+        stmt = stmt.where(CollectionRecord.fecha <= hasta)
+    rows = (await session.scalars(stmt.order_by(CollectionRecord.fecha.desc()))).all()
+    return [CollectionOut.model_validate(c) for c in rows]
 
 
 # --------------------------------------------------------------- costo-hora -- #

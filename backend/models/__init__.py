@@ -10,12 +10,13 @@ from .patient_access import PatientAccess
 from .clinical_file import ClinicalFile
 from .appointment import Appointment
 from .note import ClinicalNote
-from .payment import Payment
 from .subscription import Subscription
 from .note_feedback import NoteFeedback
 from .expense import Expense
 from .recurring_expense import RecurringExpense
 from .monthly_setting import MonthlySetting
+from .income_record import IncomeRecord
+from .collection_record import CollectionRecord
 
 __all__ = [
     "Base",
@@ -30,10 +31,11 @@ __all__ = [
     "ClinicalFile",
     "Appointment",
     "ClinicalNote",
-    "Payment",
     "Subscription",
     "NoteFeedback",
     "Expense",
     "RecurringExpense",
     "MonthlySetting",
+    "IncomeRecord",
+    "CollectionRecord",
 ]
