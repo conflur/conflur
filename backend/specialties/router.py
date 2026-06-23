@@ -71,6 +71,8 @@ async def update_session_type(st_id: uuid.UUID, body: SessionTypeUpdate, princip
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Prestación no encontrada")
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(st, field, value)
+    await session.flush()
+    await session.refresh(st)  # updated_at dentro de la tx (RLS activo)
     await session.commit()
     return SessionTypeOut.model_validate(st)
 

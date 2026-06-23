@@ -62,6 +62,11 @@ async def test_create_list_get_patient(client, cleanup):
     assert r.status_code == 200
     assert r.json()["full_name"] == "Juan Paciente"
 
+    # PATCH (cubre serialización post-update: updated_at con onupdate)
+    r = await client.patch(f"/patients/{pid}", headers=_auth(token), json={"phone": "1122334455"})
+    assert r.status_code == 200, r.text
+    assert r.json()["phone"] == "1122334455"
+
 
 async def test_cross_tenant_isolation(client, cleanup):
     # Dos profesionales = dos consultorios distintos.

@@ -86,6 +86,8 @@ async def update_patient(patient_id: uuid.UUID, body: PatientUpdate, principal: 
     patient = await session.get(Patient, patient_id)
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(patient, field, value)
+    await session.flush()
+    await session.refresh(patient)  # updated_at dentro de la tx (RLS activo)
     await session.commit()
     return PatientOut.model_validate(patient)
 

@@ -86,6 +86,8 @@ async def upsert_ficha(patient_id: uuid.UUID, body: FichaUpdate, principal: Curr
         session.add(ficha)
     else:
         ficha.values = body.values
+    await session.flush()
+    await session.refresh(ficha)  # updated_at dentro de la tx (RLS activo)
     await session.commit()
 
     return FichaOut(patient_id=patient_id, specialty_code=ficha.specialty_code, ficha_schema=schema, values=ficha.values)

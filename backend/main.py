@@ -8,6 +8,7 @@ from auth.passkeys import router as passkey_router
 from patients.router import router as patients_router
 from patients.ficha import router as ficha_router
 from patients.notes import router as notes_router
+from appointments.router import router as appointments_router
 from specialties.router import router as specialties_router
 
 
@@ -36,6 +37,7 @@ app.include_router(passkey_router)
 app.include_router(patients_router)
 app.include_router(ficha_router)
 app.include_router(notes_router)
+app.include_router(appointments_router)
 app.include_router(specialties_router)
 
 
