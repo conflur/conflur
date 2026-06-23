@@ -412,6 +412,8 @@ Adaptación psicología: sin insumos/inventario relevantes; "hora sillón" → *
 
 **Decisión D17 [2026-06-22]:** dominio financiero completo con devengado/percibido + **carga por compra** (deriva amortización/fijo/variable) + costo-hora + precio inteligente + ER/FC/metas/KPIs/presupuesto/excedentes/cuotas. Re-keyed a `tenant_id` (no `user_id` — ya tenemos tenancy de primera clase, lo que el referente tenía como deuda v2). Mejora sobre el referente: se reemplaza el setup+edición mensual de costos fijos (pierde historial) por la carga por compra (historial natural).
 
+**Decisión D24 [2026-06-23]:** **inventario/materiales NO se construye en el MVP de psicólogos** (no usan insumos). Es un **módulo aditivo por-vertical** (tablas `supplies`/`inventory_movements`/`treatment_supplies` que se agregan cuando entre una profesión con insumos) — **no requiere cambiar** el modelo existente: las prestaciones ya tienen costo variable y la carga por compra ya contempla el tipo `variable`. Diseño completo ✓, construcción cuando un vertical lo necesite (evita YAGNI y el riesgo de construir lo equivocado). Implementación del motor de costos: modelos `Expense` (durable/fijo/variable + vida útil) + `RecurringExpense` (fijo recurrente con `valid_from/until` = historial natural) + `MonthlySetting` (horas + saldo); `GET /finanzas/costo-hora` computa (fijos vigentes + amortización) ÷ horas.
+
 ### Facturación electrónica
 
 **Decisión D18 [2026-06-22]:** facturación electrónica como capa **abstracta país-agnóstica**, con **ARCA/AFIP (Argentina, WSFE)** como primera implementación desde M0. Otros países (CFDI MX, DIAN CO) en v2. Separar siempre: (a) Conflur le cobra al profesional (suscripción Stripe/MP) vs (b) el profesional factura a sus pacientes (este módulo).

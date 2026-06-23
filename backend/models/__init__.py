@@ -13,6 +13,9 @@ from .note import ClinicalNote
 from .payment import Payment
 from .subscription import Subscription
 from .note_feedback import NoteFeedback
+from .expense import Expense
+from .recurring_expense import RecurringExpense
+from .monthly_setting import MonthlySetting
 
 __all__ = [
     "Base",
@@ -30,4 +33,7 @@ __all__ = [
     "Payment",
     "Subscription",
     "NoteFeedback",
+    "Expense",
+    "RecurringExpense",
+    "MonthlySetting",
 ]
