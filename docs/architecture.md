@@ -429,6 +429,34 @@ Adaptación psicología: sin insumos/inventario relevantes; "hora sillón" → *
 
 **Decisión D20 [2026-06-22]:** diseñar el **contrato de agente** como estándar de plataforma (input tipado, acceso al KM con `tenant_id`, tracking de tokens) una vez. Construir primero el **agente de notas** (core differentiator). Los agentes de **MKT, agenda y finanzas** se validan en Conflur y luego se ofrecen como **versiones premium** (upsell). Esto materializa el norte de EMPRESAS-IA: la instancia valida que el modelo agéntico es replicable.
 
+### Estructura de costos y eficiencia agéntica
+
+Principio base (7c): **medir, no mutilar** — no se degrada el output para ahorrar; se optimiza con datos reales. Todos los agentes usan Sonnet 4.6. La eficiencia se logra con **estructura**, no con límites a priori.
+
+**Dos baldes de costo (se miden por separado):**
+| Balde | Agentes | Escala | Lo paga |
+|---|---|---|---|
+| Por cliente | Notas (y premium por cliente) | Lineal con usuarios | El precio del plan |
+| Operación de la empresa | CEO · MKT/contenido · CS · finanzas | Fijo-ish (por cadencia/eventos, no por usuario) | El margen agregado |
+
+**Monitorear ≠ decidir (clave de eficiencia y de latencia):**
+- **Monitores deterministas (sin LLM, ~$0):** chequean umbrales/eventos de forma continua (pago fallido, caída de activación, spike de churn, error crítico, budget de tokens al límite). Es la Orchestration Layer (Capa 1).
+- **CEO reactivo (LLM, event-driven):** se activa cuando un monitor dispara una alerta → analiza y decide o escala a Sebas. Latencia de minutos, **no semanal**.
+- **CEO periódico (LLM):** digest diario liviano + revisión profunda semanal.
+- No se paga IA por *vigilar*; se paga solo cuando **hay algo que decidir**.
+
+**Guardrails:**
+- **Budget de tokens por agente** (mensual). El agente de Finanzas + el CEO vigilan el gasto agéntico total; al acercarse al límite, el CEO **escala a Sebas (gate humano)** — no degrada en silencio. (Tope duro aceptable acá porque es costo propio, no calidad al cliente.)
+- **Caching de Anthropic** sobre contexto estable (system prompts, plantillas por especialidad, brand/estilo de MKT, contexto de empresa del CEO).
+- **Cadencia dimensionada al need** (la palanca #1 de costo = frecuencia × tamaño de contexto).
+- **Tiering**: el plan base incluye notas (acotado y barato); los agentes premium se precian para cubrir su propio costo de tokens.
+
+**KPIs guardrail (los vigila el CEO):** (a) *costo IA por usuario activo* (balde 1) · (b) *OPEX agéntico como % del MRR* (balde 2).
+
+**Unit economics (estimado, a validar con datos reales):** costo variable ~US$2–3/usuario sobre $15 → margen bruto ~80%. Capa de empresa ~US$15–40/mes (dominada por MKT/contenido). **Breakeven ~7–15 usuarios de pago** cubren infra + todos los agentes de la empresa.
+
+**Decisión D21 [2026-06-23]:** estructura de costos en dos baldes (por cliente / operación de empresa); monitores deterministas + CEO event-driven (reactivo a alertas + periódico, no batch semanal); budget de tokens por agente con gate humano; caching; tiering de premium; KPIs de costo (por usuario y % del MRR). Eficiencia por estructura y medición, nunca degradando output.
+
 ---
 
 ## Decisiones pendientes (bloquean inicio de construcción)
