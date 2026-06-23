@@ -48,7 +48,8 @@ Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`co
 - **SEB-169 Notas IA** — agente `agents/notes.py` (bullets→nota) + `patients/notes.py` (generate/guardar/listar/feedback) con acceso clínico. Migración 0004 (appointment_id opcional). 5 tests.
 - **SEB-167 Agenda** — `appointments/`: CRUD de turnos (crear/listar por rango/PATCH/cancelar) con autorización por rol (owner/assistant todos; professional los suyos), RLS. 3 tests. (Google Calendar + recordatorios WhatsApp = follow-up.)
 - **Fix sistémico**: PATCH/PUT serializaban mal por `updated_at` onupdate + RLS por tx → patrón **flush→refresh→commit** en patients/ficha/session_types/appointments.
-- Suite total: **39 tests** verdes.
+- **SEB-170 (parte 1) Finanzas — motor de costos** — `Expense`/`RecurringExpense`/`MonthlySetting` + `GET /finanzas/costo-hora` (carga por compra → costo-hora). Migración 0005. 5 tests. Sin inventario (módulo aditivo, D24). Falta: ingresos/cobros (devengado/percibido), precio inteligente, ER/FC, presupuesto/excedentes, ARCA.
+- Suite total: **44 tests** verdes.
 
 > El ficha_schema de psicología es un **dato editable** (`specialties.ficha_schema`), no código → se ajusta tras validar con un profesional real sin tocar código.
 
