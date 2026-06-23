@@ -158,6 +158,44 @@ async def test_finanzas_requiere_rol_operativo(client, cleanup):
     assert r.status_code == 403
 
 
+async def test_dashboard_er_fc_matriz_kpis(client, cleanup):
+    token = await _register(client, cleanup)
+    h = _auth(token)
+
+    # Costos fijos del mes: alquiler 100.000 (recurrente)
+    await client.post("/finanzas/recurrentes", headers=h, json={"concepto": "Alquiler", "monthly_amount": 100000, "valid_from": "2026-03-01"})
+    # Configuración: 50 horas
+    await client.put("/finanzas/configuracion-mensual", headers=h, json={"year": 2026, "month": 3, "planned_hours": 50, "opening_cash_balance": 20000})
+    # 2 atenciones devengadas de 80.000 c/u = 160.000 ingresos
+    for _ in range(2):
+        await client.post("/finanzas/ingresos", headers=h, json={"fecha": "2026-03-10", "amount": 80000})
+    # Cobros percibidos: 120.000 (cobró parte)
+    await client.post("/finanzas/cobros", headers=h, json={"fecha": "2026-03-10", "amount": 120000})
+    # Un gasto variable pagado: 10.000
+    await client.post("/finanzas/gastos", headers=h, json={"fecha": "2026-03-12", "tipo": "variable", "descripcion": "Insumo", "monto": 10000})
+
+    r = await client.get("/finanzas/dashboard", params={"year": 2026, "month": 3}, headers=h)
+    assert r.status_code == 200, r.text
+    d = r.json()
+
+    # ER: 160.000 - 10.000 var - 100.000 fijo = 50.000
+    assert d["estado_resultado"]["ingresos"] == 160000.0
+    assert d["estado_resultado"]["costos_fijos"] == 100000.0
+    assert d["estado_resultado"]["resultado_neto"] == 50000.0
+
+    # FC: saldo_inicial 20.000 + entradas 120.000 - salidas 10.000 = 130.000
+    assert d["flujo_caja"]["saldo_final"] == 130000.0
+
+    # Matriz: rentable (+) y caja (+) → verde
+    assert d["matriz_salud"]["codigo"] == "verde"
+
+    # KPIs
+    assert d["kpis"]["atenciones"] == 2
+    assert d["kpis"]["ticket_promedio"] == 80000.0
+    assert d["kpis"]["pct_cobro"] == 75.0  # 120.000 / 160.000
+    assert d["kpis"]["rentabilidad_por_hora"] == 1000.0  # 50.000 / 50 hs
+
+
 async def test_finance_isolation_between_tenants(client, cleanup):
     token_a = await _register(client, cleanup)
     token_b = await _register(client, cleanup)

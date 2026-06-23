@@ -21,8 +21,10 @@ from finance.schemas import (
     RecurringExpenseCreate, RecurringExpenseOut, RecurringChangeAmount,
     MonthlySettingUpsert, MonthlySettingOut, CostoHoraOut, TIPOS,
     IncomeCreate, IncomeOut, CollectionCreate, CollectionOut,
+    DashboardOut,
 )
 from finance.service import costo_hora
+from finance.reports import dashboard as compute_dashboard
 
 router = APIRouter(prefix="/finanzas", tags=["finanzas"])
 
@@ -206,3 +208,9 @@ async def list_collections(principal: FinancePrincipal, session: TenantSession,
 @router.get("/costo-hora", response_model=CostoHoraOut)
 async def get_costo_hora(year: int, month: int, principal: FinancePrincipal, session: TenantSession):
     return CostoHoraOut(**await costo_hora(session, year, month))
+
+
+# --------------------------------------------------------------- dashboard -- #
+@router.get("/dashboard", response_model=DashboardOut)
+async def get_dashboard(year: int, month: int, principal: FinancePrincipal, session: TenantSession):
+    return DashboardOut(**await compute_dashboard(session, year, month))

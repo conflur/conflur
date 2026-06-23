@@ -155,3 +155,43 @@ class CostoHoraOut(BaseModel):
     planned_hours: float | None
     costo_hora: float | None
     needs_setup: bool
+
+
+class EstadoResultadoOut(BaseModel):
+    ingresos: float
+    costos_variables: float
+    costos_fijos: float
+    resultado_neto: float
+    margen_neto_pct: float | None
+
+
+class FlujoCajaOut(BaseModel):
+    saldo_inicial: float
+    entradas: float
+    salidas: float
+    flujo_neto: float
+    saldo_final: float
+
+
+class MatrizSaludOut(BaseModel):
+    codigo: str
+    label: str
+    detalle: str
+
+
+class KpisOut(BaseModel):
+    atenciones: int
+    ticket_promedio: float | None
+    pct_cobro: float | None
+    costo_por_paciente: float | None
+    rentabilidad_por_hora: float | None
+
+
+class DashboardOut(BaseModel):
+    year: int
+    month: int
+    estado_resultado: EstadoResultadoOut
+    flujo_caja: FlujoCajaOut
+    matriz_salud: MatrizSaludOut
+    kpis: KpisOut
+    alertas: list[str]
