@@ -46,7 +46,9 @@ Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`co
 - **SEB-176 Ficha clínica** — `ClinicalFile` (values JSONB validados contra el ficha_schema) + `GET/PUT /patients/{id}/ficha` con **autorización clínica estricta** (solo patient_access; la secretaría ve el perfil, no la ficha). Migración 0003. 3 tests.
 - **SEB-165 LiteLLM** (✅ Done) — `llm/client.py`: LLMClient backend inyectable, modelo por `.env`, tokens. 2 tests.
 - **SEB-169 Notas IA** — agente `agents/notes.py` (bullets→nota) + `patients/notes.py` (generate/guardar/listar/feedback) con acceso clínico. Migración 0004 (appointment_id opcional). 5 tests.
-- Suite total: **36 tests** verdes.
+- **SEB-167 Agenda** — `appointments/`: CRUD de turnos (crear/listar por rango/PATCH/cancelar) con autorización por rol (owner/assistant todos; professional los suyos), RLS. 3 tests. (Google Calendar + recordatorios WhatsApp = follow-up.)
+- **Fix sistémico**: PATCH/PUT serializaban mal por `updated_at` onupdate + RLS por tx → patrón **flush→refresh→commit** en patients/ficha/session_types/appointments.
+- Suite total: **39 tests** verdes.
 
 > El ficha_schema de psicología es un **dato editable** (`specialties.ficha_schema`), no código → se ajusta tras validar con un profesional real sin tocar código.
 
