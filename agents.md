@@ -49,9 +49,10 @@ Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`co
 - **SEB-167 Agenda** — `appointments/`: CRUD de turnos (crear/listar por rango/PATCH/cancelar) con autorización por rol (owner/assistant todos; professional los suyos), RLS. 3 tests. (Google Calendar + recordatorios WhatsApp = follow-up.)
 - **Fix sistémico**: PATCH/PUT serializaban mal por `updated_at` onupdate + RLS por tx → patrón **flush→refresh→commit** en patients/ficha/session_types/appointments.
 - **SEB-170 ✅ Finanzas — motor de costos + ingresos/cobros** — `Expense`/`RecurringExpense`/`MonthlySetting` + `costo-hora` (migr 0005); `IncomeRecord`/`CollectionRecord` devengado/percibido (migr 0006, dropea `Payment` legacy). `/finanzas/*`, acceso operativo. Sin inventario (D24).
-- **SEB-171 (p1) dashboard financiero** — `GET /finanzas/dashboard`: ER + Flujo de Caja + Matriz Salud Financiera 2x2 + KPIs + alertas (cálculo puro). 
-- Suite total: **47 tests** verdes.
-- **Falta del dominio financiero:** SEB-171 p2 (metas anuales target vs real) · SEB-178 precio inteligente · SEB-179 presupuesto/excedentes/cuotas · SEB-180 ARCA.
+- **SEB-171 (p1) dashboard financiero** — `GET /finanzas/dashboard`: ER + Flujo de Caja + Matriz Salud Financiera 2x2 + KPIs + alertas (cálculo puro).
+- **SEB-178 ✅ precio inteligente** — `GET /finanzas/precio-sugerido` = (costo_hora × duración + variable) × (1+margen) vs precio actual. session_types +target_margin +variable_cost (migr 0007).
+- Suite total: **49 tests** verdes.
+- **Falta del dominio financiero:** SEB-171 p2 (metas anuales target vs real) · SEB-179 presupuesto/excedentes/cuotas · SEB-180 ARCA.
 
 > El ficha_schema de psicología es un **dato editable** (`specialties.ficha_schema`), no código → se ajusta tras validar con un profesional real sin tocar código.
 
