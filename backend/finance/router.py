@@ -12,7 +12,7 @@ from sqlalchemy import select
 
 from datetime import date as date_type
 
-from models import Expense, RecurringExpense, MonthlySetting, IncomeRecord, CollectionRecord, SessionType
+from models import Expense, RecurringExpense, MonthlySetting, IncomeRecord, CollectionRecord, SessionType, AnnualGoal
 from auth.dependencies import CurrentPrincipal, TenantSession
 from auth.schemas import PrincipalOut
 from patients.access import OPERATIONAL_ROLES
@@ -21,7 +21,7 @@ from finance.schemas import (
     RecurringExpenseCreate, RecurringExpenseOut, RecurringChangeAmount,
     MonthlySettingUpsert, MonthlySettingOut, CostoHoraOut, TIPOS,
     IncomeCreate, IncomeOut, CollectionCreate, CollectionOut,
-    DashboardOut, PrecioSugeridoOut,
+    DashboardOut, PrecioSugeridoOut, AnnualGoalUpsert, AnnualGoalOut,
 )
 from finance.service import costo_hora
 from finance.reports import dashboard as compute_dashboard
@@ -243,6 +243,31 @@ async def precio_sugerido(session_type_id: uuid.UUID, year: int, month: int,
         margen_pct=margen, precio_sugerido=precio_sugerido, precio_actual=precio_actual,
         diferencia_pct=diferencia, needs_setup=False,
     )
+
+
+# -------------------------------------------------------------- metas ------- #
+@router.put("/metas", response_model=AnnualGoalOut)
+async def upsert_metas(body: AnnualGoalUpsert, principal: FinancePrincipal, session: TenantSession):
+    goal = await session.scalar(select(AnnualGoal).where(AnnualGoal.year == body.year))
+    if goal is None:
+        goal = AnnualGoal(tenant_id=principal.tenant_id, **body.model_dump())
+        session.add(goal)
+    else:
+        goal.meta_margen_neto = body.meta_margen_neto
+        goal.meta_ticket_promedio = body.meta_ticket_promedio
+        goal.meta_rentabilidad_por_hora = body.meta_rentabilidad_por_hora
+    await session.flush()
+    await session.refresh(goal)
+    await session.commit()
+    return AnnualGoalOut.model_validate(goal)
+
+
+@router.get("/metas", response_model=AnnualGoalOut)
+async def get_metas(year: int, principal: FinancePrincipal, session: TenantSession):
+    goal = await session.scalar(select(AnnualGoal).where(AnnualGoal.year == year))
+    if goal is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sin metas para ese año")
+    return AnnualGoalOut.model_validate(goal)
 
 
 # --------------------------------------------------------------- dashboard -- #

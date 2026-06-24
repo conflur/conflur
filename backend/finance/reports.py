@@ -5,7 +5,7 @@ Matriz de Salud Financiera y KPIs. Cálculo puro sobre los datos existentes.
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import IncomeRecord, CollectionRecord, Expense, MonthlySetting
+from models import IncomeRecord, CollectionRecord, Expense, MonthlySetting, AnnualGoal
 from finance.service import costo_hora, _month_bounds
 
 
@@ -93,6 +93,15 @@ async def dashboard(session: AsyncSession, year: int, month: int) -> dict:
     if saldo_final < 0:
         alertas.append("Saldo de caja negativo.")
 
+    # Metas anuales (para comparar vs real en la UI)
+    goal = await session.scalar(select(AnnualGoal).where(AnnualGoal.year == year))
+    metas = {
+        "year": year,
+        "meta_margen_neto": float(goal.meta_margen_neto) if goal and goal.meta_margen_neto is not None else None,
+        "meta_ticket_promedio": float(goal.meta_ticket_promedio) if goal and goal.meta_ticket_promedio is not None else None,
+        "meta_rentabilidad_por_hora": float(goal.meta_rentabilidad_por_hora) if goal and goal.meta_rentabilidad_por_hora is not None else None,
+    } if goal else None
+
     return {
         "year": year,
         "month": month,
@@ -100,5 +109,6 @@ async def dashboard(session: AsyncSession, year: int, month: int) -> dict:
         "flujo_caja": flujo_caja,
         "matriz_salud": _cuadrante(resultado_neto, saldo_final),
         "kpis": kpis,
+        "metas": metas,
         "alertas": alertas,
     }

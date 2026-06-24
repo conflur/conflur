@@ -201,6 +201,23 @@ class PrecioSugeridoOut(BaseModel):
     needs_setup: bool
 
 
+class AnnualGoalUpsert(BaseModel):
+    year: int = Field(ge=2020, le=2100)
+    meta_margen_neto: float | None = Field(default=None, ge=0)
+    meta_ticket_promedio: float | None = Field(default=None, ge=0)
+    meta_rentabilidad_por_hora: float | None = Field(default=None, ge=0)
+
+
+class AnnualGoalOut(BaseModel):
+    year: int
+    meta_margen_neto: float | None
+    meta_ticket_promedio: float | None
+    meta_rentabilidad_por_hora: float | None
+
+    class Config:
+        from_attributes = True
+
+
 class DashboardOut(BaseModel):
     year: int
     month: int
@@ -208,4 +225,5 @@ class DashboardOut(BaseModel):
     flujo_caja: FlujoCajaOut
     matriz_salud: MatrizSaludOut
     kpis: KpisOut
+    metas: AnnualGoalOut | None
     alertas: list[str]

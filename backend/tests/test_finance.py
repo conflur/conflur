@@ -231,6 +231,27 @@ async def test_precio_sugerido_sin_setup(client, cleanup):
     assert r.json()["precio_sugerido"] is None
 
 
+async def test_metas_anuales_y_dashboard(client, cleanup):
+    token = await _register(client, cleanup)
+    h = _auth(token)
+
+    # definir metas 2026
+    r = await client.put("/finanzas/metas", headers=h, json={
+        "year": 2026, "meta_margen_neto": 40, "meta_ticket_promedio": 9000, "meta_rentabilidad_por_hora": 5000,
+    })
+    assert r.status_code == 200, r.text
+    assert r.json()["meta_margen_neto"] == 40.0
+
+    # actualizar (upsert) una meta
+    r = await client.put("/finanzas/metas", headers=h, json={"year": 2026, "meta_margen_neto": 45})
+    assert r.status_code == 200 and r.json()["meta_margen_neto"] == 45.0
+
+    # aparecen en el dashboard del año
+    r = await client.get("/finanzas/dashboard", params={"year": 2026, "month": 3}, headers=h)
+    assert r.status_code == 200
+    assert r.json()["metas"]["meta_margen_neto"] == 45.0
+
+
 async def test_finance_isolation_between_tenants(client, cleanup):
     token_a = await _register(client, cleanup)
     token_b = await _register(client, cleanup)

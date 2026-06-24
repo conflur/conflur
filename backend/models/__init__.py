@@ -17,6 +17,7 @@ from .recurring_expense import RecurringExpense
 from .monthly_setting import MonthlySetting
 from .income_record import IncomeRecord
 from .collection_record import CollectionRecord
+from .annual_goal import AnnualGoal
 
 __all__ = [
     "Base",
@@ -38,4 +39,5 @@ __all__ = [
     "MonthlySetting",
     "IncomeRecord",
     "CollectionRecord",
+    "AnnualGoal",
 ]
