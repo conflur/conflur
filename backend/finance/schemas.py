@@ -187,6 +187,20 @@ class KpisOut(BaseModel):
     rentabilidad_por_hora: float | None
 
 
+class PrecioSugeridoOut(BaseModel):
+    session_type_id: uuid.UUID
+    nombre: str
+    duracion_horas: float
+    costo_hora: float | None
+    costo_estructura: float | None
+    costo_variable: float
+    margen_pct: float
+    precio_sugerido: float | None
+    precio_actual: float | None
+    diferencia_pct: float | None  # actual vs sugerido (negativo = por debajo del costo+margen)
+    needs_setup: bool
+
+
 class DashboardOut(BaseModel):
     year: int
     month: int

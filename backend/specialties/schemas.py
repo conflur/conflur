@@ -22,6 +22,8 @@ class SessionTypeCreate(BaseModel):
     duration_minutes: int = Field(default=50, ge=1, le=600)
     base_price: float | None = Field(default=None, ge=0)
     currency: str | None = Field(default=None, max_length=10)
+    target_margin: float | None = Field(default=None, ge=0)
+    variable_cost: float | None = Field(default=None, ge=0)
     # Si se omite, se usa la especialidad del consultorio.
     specialty_code: str | None = None
 
@@ -31,6 +33,8 @@ class SessionTypeUpdate(BaseModel):
     duration_minutes: int | None = Field(default=None, ge=1, le=600)
     base_price: float | None = Field(default=None, ge=0)
     currency: str | None = Field(default=None, max_length=10)
+    target_margin: float | None = Field(default=None, ge=0)
+    variable_cost: float | None = Field(default=None, ge=0)
     is_active: bool | None = None
 
 
@@ -42,6 +46,8 @@ class SessionTypeOut(BaseModel):
     duration_minutes: int
     base_price: float | None
     currency: str | None
+    target_margin: float | None
+    variable_cost: float | None
     is_active: bool
     created_at: datetime
     updated_at: datetime

@@ -12,7 +12,7 @@ from sqlalchemy import select
 
 from datetime import date as date_type
 
-from models import Expense, RecurringExpense, MonthlySetting, IncomeRecord, CollectionRecord
+from models import Expense, RecurringExpense, MonthlySetting, IncomeRecord, CollectionRecord, SessionType
 from auth.dependencies import CurrentPrincipal, TenantSession
 from auth.schemas import PrincipalOut
 from patients.access import OPERATIONAL_ROLES
@@ -21,7 +21,7 @@ from finance.schemas import (
     RecurringExpenseCreate, RecurringExpenseOut, RecurringChangeAmount,
     MonthlySettingUpsert, MonthlySettingOut, CostoHoraOut, TIPOS,
     IncomeCreate, IncomeOut, CollectionCreate, CollectionOut,
-    DashboardOut,
+    DashboardOut, PrecioSugeridoOut,
 )
 from finance.service import costo_hora
 from finance.reports import dashboard as compute_dashboard
@@ -208,6 +208,41 @@ async def list_collections(principal: FinancePrincipal, session: TenantSession,
 @router.get("/costo-hora", response_model=CostoHoraOut)
 async def get_costo_hora(year: int, month: int, principal: FinancePrincipal, session: TenantSession):
     return CostoHoraOut(**await costo_hora(session, year, month))
+
+
+# ---------------------------------------------------------- precio sugerido -- #
+@router.get("/precio-sugerido", response_model=PrecioSugeridoOut)
+async def precio_sugerido(session_type_id: uuid.UUID, year: int, month: int,
+                          principal: FinancePrincipal, session: TenantSession):
+    st = await session.get(SessionType, session_type_id)
+    if st is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Prestación no encontrada")
+
+    ch = await costo_hora(session, year, month)
+    duracion_horas = round(st.duration_minutes / 60, 4)
+    costo_variable = float(st.variable_cost) if st.variable_cost is not None else 0.0
+    margen = float(st.target_margin) if st.target_margin is not None else 0.0
+    precio_actual = float(st.base_price) if st.base_price is not None else None
+
+    costo_hora_val = ch["costo_hora"]
+    if costo_hora_val is None:
+        return PrecioSugeridoOut(
+            session_type_id=st.id, nombre=st.name, duracion_horas=duracion_horas,
+            costo_hora=None, costo_estructura=None, costo_variable=costo_variable,
+            margen_pct=margen, precio_sugerido=None, precio_actual=precio_actual,
+            diferencia_pct=None, needs_setup=True,
+        )
+
+    costo_estructura = round(costo_hora_val * duracion_horas, 2)
+    precio_sugerido = round((costo_estructura + costo_variable) * (1 + margen / 100), 2)
+    diferencia = round((precio_actual - precio_sugerido) / precio_sugerido * 100, 1) if precio_actual and precio_sugerido else None
+
+    return PrecioSugeridoOut(
+        session_type_id=st.id, nombre=st.name, duracion_horas=duracion_horas,
+        costo_hora=costo_hora_val, costo_estructura=costo_estructura, costo_variable=costo_variable,
+        margen_pct=margen, precio_sugerido=precio_sugerido, precio_actual=precio_actual,
+        diferencia_pct=diferencia, needs_setup=False,
+    )
 
 
 # --------------------------------------------------------------- dashboard -- #

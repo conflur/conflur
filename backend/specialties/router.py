@@ -58,6 +58,8 @@ async def create_session_type(body: SessionTypeCreate, principal: CurrentPrincip
         duration_minutes=body.duration_minutes,
         base_price=body.base_price,
         currency=body.currency,
+        target_margin=body.target_margin,
+        variable_cost=body.variable_cost,
     )
     session.add(st)
     await session.commit()

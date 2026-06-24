@@ -31,6 +31,10 @@ class SessionType(Base):
     duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
     base_price: Mapped[float | None] = mapped_column(Numeric(15, 2), nullable=True)
     currency: Mapped[str | None] = mapped_column(String(10), nullable=True)  # ARS, MXN, COP, USD
+    # Margen objetivo (%) para el precio inteligente. Ej: 40.00 = 40%.
+    target_margin: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)
+    # Costo variable directo de la prestación (insumos puntuales; ~0 en psicología).
+    variable_cost: Mapped[float | None] = mapped_column(Numeric(15, 2), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

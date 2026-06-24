@@ -196,6 +196,41 @@ async def test_dashboard_er_fc_matriz_kpis(client, cleanup):
     assert d["kpis"]["rentabilidad_por_hora"] == 1000.0  # 50.000 / 50 hs
 
 
+async def test_precio_sugerido(client, cleanup):
+    token = await _register(client, cleanup)
+    h = _auth(token)
+
+    # costo-hora del mes: alquiler 100.000 / 50 hs = 2.000/h
+    await client.post("/finanzas/recurrentes", headers=h, json={"concepto": "Alquiler", "monthly_amount": 100000, "valid_from": "2026-03-01"})
+    await client.put("/finanzas/configuracion-mensual", headers=h, json={"year": 2026, "month": 3, "planned_hours": 50, "opening_cash_balance": 0})
+
+    # prestación de 60 min, margen 40%, precio actual 2500
+    st = (await client.post("/session-types", headers=h, json={
+        "name": "Sesión individual", "duration_minutes": 60, "base_price": 2500, "target_margin": 40, "currency": "ARS",
+    })).json()
+
+    r = await client.get("/finanzas/precio-sugerido", params={"session_type_id": st["id"], "year": 2026, "month": 3}, headers=h)
+    assert r.status_code == 200, r.text
+    d = r.json()
+    # costo_estructura = 2000 × 1h = 2000; sugerido = 2000 × 1.40 = 2800
+    assert d["costo_hora"] == 2000.0
+    assert d["costo_estructura"] == 2000.0
+    assert d["precio_sugerido"] == 2800.0
+    # actual 2500 vs sugerido 2800 → -10.7% (por debajo)
+    assert d["diferencia_pct"] == -10.7
+    assert d["needs_setup"] is False
+
+
+async def test_precio_sugerido_sin_setup(client, cleanup):
+    token = await _register(client, cleanup)
+    h = _auth(token)
+    st = (await client.post("/session-types", headers=h, json={"name": "Sesión", "duration_minutes": 50})).json()
+    r = await client.get("/finanzas/precio-sugerido", params={"session_type_id": st["id"], "year": 2026, "month": 9}, headers=h)
+    assert r.status_code == 200
+    assert r.json()["needs_setup"] is True
+    assert r.json()["precio_sugerido"] is None
+
+
 async def test_finance_isolation_between_tenants(client, cleanup):
     token_a = await _register(client, cleanup)
     token_b = await _register(client, cleanup)
