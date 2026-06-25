@@ -61,13 +61,15 @@ export const saveFicha = (t: string, id: string, values: Record<string, unknown>
 
 // ---- notas ----
 export const listNotes = (t: string, id: string) => authedFetch<Note[]>(t, `/patients/${id}/notes`);
-export const generateNote = (t: string, id: string, input_bullets: string) =>
+export const NOTE_FORMATS: Record<string, string> = { libre: "Libre", soap: "SOAP" };
+
+export const generateNote = (t: string, id: string, input_bullets: string, note_format = "libre") =>
   authedFetch<GeneratedNote>(t, `/patients/${id}/notes/generate`, {
-    method: "POST", body: JSON.stringify({ input_bullets }),
+    method: "POST", body: JSON.stringify({ input_bullets, note_format }),
   });
 export const saveNote = (
   t: string, id: string,
-  data: { input_bullets: string; content: string; model_used?: string; tokens_used?: number; is_edited?: boolean },
+  data: { input_bullets: string; content: string; template_type?: string; model_used?: string; tokens_used?: number; is_edited?: boolean },
 ) => authedFetch<Note>(t, `/patients/${id}/notes`, { method: "POST", body: JSON.stringify(data) });
 export const sendNoteFeedback = (t: string, noteId: string, rating: number, comment?: string) =>
   authedFetch(t, `/notes/${noteId}/feedback`, { method: "POST", body: JSON.stringify({ rating, comment }) });

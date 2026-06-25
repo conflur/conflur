@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  listNotes, generateNote, saveNote, sendNoteFeedback,
+  listNotes, generateNote, saveNote, sendNoteFeedback, NOTE_FORMATS,
   type Note, type GeneratedNote,
 } from "@/lib/conflur";
 import { ApiError } from "@/lib/apiClient";
@@ -13,6 +13,7 @@ export default function NotasTab({ token, patientId }: { token: string; patientI
 
   // estado del editor de nueva nota
   const [bullets, setBullets] = useState("");
+  const [format, setFormat] = useState("libre");
   const [draft, setDraft] = useState("");
   const [gen, setGen] = useState<GeneratedNote | null>(null);
   const [edited, setEdited] = useState(false);
@@ -29,7 +30,7 @@ export default function NotasTab({ token, patientId }: { token: string; patientI
   async function generate() {
     setMsg(null); setGenerating(true);
     try {
-      const g = await generateNote(token, patientId, bullets);
+      const g = await generateNote(token, patientId, bullets, format);
       setGen(g); setDraft(g.content); setEdited(false);
     } catch (err) {
       setMsg({ kind: "error", text: err instanceof ApiError ? err.message : "No se pudo generar la nota" });
@@ -40,7 +41,7 @@ export default function NotasTab({ token, patientId }: { token: string; patientI
     setMsg(null); setSaving(true);
     try {
       await saveNote(token, patientId, {
-        input_bullets: bullets, content: draft,
+        input_bullets: bullets, content: draft, template_type: format === "soap" ? "soap" : "psychology_session",
         model_used: gen?.model_used, tokens_used: gen?.tokens_used, is_edited: edited,
       });
       setBullets(""); setDraft(""); setGen(null); setEdited(false);
@@ -66,9 +67,22 @@ export default function NotasTab({ token, patientId }: { token: string; patientI
             placeholder="Ej: paciente refiere mejoría del sueño; trabajamos exposición; tarea: registro de pensamientos"
           />
         </div>
-        <button className="btn" onClick={generate} disabled={generating || !bullets.trim()}>
-          {generating ? "Generando…" : "✨ Generar nota"}
-        </button>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: "0.75rem" }}>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label className="label">Formato</label>
+            <select className="select" value={format} onChange={(e) => setFormat(e.target.value)} style={{ width: "auto" }}>
+              {Object.entries(NOTE_FORMATS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+          <button className="btn" onClick={generate} disabled={generating || !bullets.trim()}>
+            {generating ? "Generando…" : "✨ Generar nota"}
+          </button>
+        </div>
+        <div className="muted small" style={{ marginTop: "0.4rem" }}>
+          {format === "soap"
+            ? "SOAP: estructura la nota en Subjetivo, Objetivo, Análisis y Plan."
+            : "Libre: nota de evolución corrida."}
+        </div>
 
         {gen && (
           <>
@@ -118,6 +132,7 @@ function NoteItem({ token, note }: { token: string; note: Note }) {
     <div style={{ padding: "0.75rem 0", borderBottom: "1px solid var(--border)" }}>
       <div style={{ whiteSpace: "pre-wrap" }}>{note.content}</div>
       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.5rem" }}>
+        {note.template_type === "soap" && <span className="badge">SOAP</span>}
         {note.is_edited && <span className="badge">editada</span>}
         <span className="spacer" style={{ flex: 1 }} />
         {rated ? (

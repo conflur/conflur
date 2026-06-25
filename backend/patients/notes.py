@@ -14,7 +14,7 @@ from sqlalchemy import select
 from models import Patient, ClinicalNote, NoteFeedback
 from auth.dependencies import CurrentPrincipal, TenantSession
 from patients.access import has_clinical_access
-from agents.notes import generate_clinical_note
+from agents.notes import generate_clinical_note, FORMATS
 from llm.client import LLMClient, get_llm_client
 
 router = APIRouter(tags=["notes"])
@@ -23,6 +23,7 @@ router = APIRouter(tags=["notes"])
 class NoteGenerateRequest(BaseModel):
     input_bullets: str = Field(min_length=1)
     template_type: str = "psychology_session"
+    note_format: str = "libre"  # libre | soap
 
 
 class NoteGenerateResponse(BaseModel):
@@ -73,7 +74,11 @@ async def generate_note(
     llm: Annotated[LLMClient, Depends(get_llm_client)],
 ):
     await _require_clinical_access(session, principal, patient_id)
-    result = generate_clinical_note(body.input_bullets, template_type=body.template_type, client=llm)
+    if body.note_format not in FORMATS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Formato inválido (libre|soap)")
+    result = generate_clinical_note(
+        body.input_bullets, template_type=body.template_type, note_format=body.note_format, client=llm,
+    )
     return NoteGenerateResponse(content=result.text, model_used=result.model, tokens_used=result.total_tokens)
 
 

@@ -30,6 +30,26 @@ def test_agent_builds_prompt_with_bullets_and_returns_tokens():
     assert seen["messages"][0]["role"] == "system"
 
 
+@pytest.mark.unit
+def test_agent_soap_usa_prompt_estructurado():
+    seen = {}
+
+    def fake_backend(messages, model, max_tokens, temperature):
+        seen["system"] = messages[0]["content"]
+        seen["user"] = messages[1]["content"]
+        return LLMResult(text="## Subjetivo (S)\n...", model=model, input_tokens=10, output_tokens=20)
+
+    # formato libre → prompt sin secciones SOAP
+    generate_clinical_note("ansiedad", note_format="libre", client=LLMClient(backend=fake_backend))
+    assert "## Subjetivo (S)" not in seen["system"]
+
+    # formato soap → prompt con las 4 secciones SOAP
+    generate_clinical_note("ansiedad", note_format="soap", client=LLMClient(backend=fake_backend))
+    for sec in ("## Subjetivo (S)", "## Objetivo (O)", "## Análisis (A)", "## Plan (P)"):
+        assert sec in seen["system"]
+    assert "SOAP" in seen["user"]
+
+
 # --------------------------------------------------------- integration ---- #
 integration = pytest.mark.integration
 
