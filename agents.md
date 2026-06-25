@@ -54,6 +54,7 @@ Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`co
 - **SEB-171 ✅ completo** — dashboard (ER+FC+matriz+KPIs) + **metas anuales** (`AnnualGoal`, migr 0008, `/finanzas/metas`, integradas al dashboard vs real).
 - Suite total: **51 tests** verdes.
 - **Falta del dominio financiero:** SEB-179 presupuesto/excedentes/cuotas · SEB-180 ARCA.
+- **UI (2026-06-25):** ✅ **Agenda** (`/agenda`, vista semanal: crear/estado/cancelar) + ✅ **Finanzas** (`/finanzas`: dashboard ER+FC+matriz+KPIs+metas vs real, movimientos gastos/ingresos/cobros, configuración mes+metas). Nav suma Agenda y Finanzas. Build de prod limpio. Pacientes/ficha/notas ya tenían UI → **MVP navegable de punta a punta**.
 - **Nota git:** push al repo requiere `gh auth switch --user empresas-ia-dev` (sebasbizzi no tiene acceso a la org).
 
 > El ficha_schema de psicología es un **dato editable** (`specialties.ficha_schema`), no código → se ajusta tras validar con un profesional real sin tocar código.
