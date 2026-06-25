@@ -11,6 +11,7 @@ from patients.notes import router as notes_router
 from appointments.router import router as appointments_router
 from finance.router import router as finance_router
 from finance.plans import router as plans_router
+from finance.surplus import router as surplus_router
 from specialties.router import router as specialties_router
 
 
@@ -42,6 +43,7 @@ app.include_router(notes_router)
 app.include_router(appointments_router)
 app.include_router(finance_router)
 app.include_router(plans_router)
+app.include_router(surplus_router)
 app.include_router(specialties_router)
 
 
