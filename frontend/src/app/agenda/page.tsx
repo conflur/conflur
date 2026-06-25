@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import AppShell from "@/components/AppShell";
 import {
   listAppointments, createAppointment, updateAppointment, cancelAppointment,
-  listPatients, APPOINTMENT_STATUS,
+  listPatients, APPOINTMENT_STATUS, APPOINTMENT_MODALITY,
   type Appointment, type AppointmentInput, type Patient,
 } from "@/lib/conflur";
 import { ApiError } from "@/lib/apiClient";
@@ -154,8 +154,14 @@ export default function AgendaPage() {
                         <div>{patientName(a.patient_id)}</div>
                         <div className="muted small">
                           {a.duration_minutes} min · <span className={`badge badge-${a.status}`}>{APPOINTMENT_STATUS[a.status] ?? a.status}</span>
+                          {a.modality === "telepsicologia" ? " · 💻 Telepsicología" : ""}
                           {a.session_number ? ` · sesión ${a.session_number}` : ""}
                         </div>
+                        {a.modality === "telepsicologia" && a.meeting_url && (
+                          <a href={a.meeting_url} target="_blank" rel="noopener noreferrer" className="small">
+                            Unirse a la videollamada →
+                          </a>
+                        )}
                       </div>
                       {a.status === "scheduled" && (
                         <div className="appt-actions">
@@ -191,6 +197,7 @@ function NewAppointmentForm({
     return localISO(d).slice(0, 16);
   });
   const [duration, setDuration] = useState(50);
+  const [modality, setModality] = useState("presencial");
   const [sessionNumber, setSessionNumber] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -206,6 +213,7 @@ function NewAppointmentForm({
         patient_id: patientId,
         starts_at: `${datetime}:00`,
         duration_minutes: duration,
+        modality,
         session_number: sessionNumber ? Number(sessionNumber) : null,
         internal_notes: notes.trim() || null,
       };
@@ -240,6 +248,12 @@ function NewAppointmentForm({
         <div className="field">
           <label className="label">Duración (min)</label>
           <input className="input" type="number" min="1" max="600" value={duration} onChange={(e) => setDuration(Number(e.target.value))} />
+        </div>
+        <div className="field">
+          <label className="label">Modalidad</label>
+          <select className="select" value={modality} onChange={(e) => setModality(e.target.value)}>
+            {Object.entries(APPOINTMENT_MODALITY).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
         </div>
         <div className="field">
           <label className="label">N° de sesión</label>

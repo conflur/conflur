@@ -80,6 +80,11 @@ export const APPOINTMENT_STATUS: Record<string, string> = {
   no_show: "No asistió",
 };
 
+export const APPOINTMENT_MODALITY: Record<string, string> = {
+  presencial: "Presencial",
+  telepsicologia: "Telepsicología",
+};
+
 export interface Appointment {
   id: string;
   tenant_id: string;
@@ -88,6 +93,8 @@ export interface Appointment {
   starts_at: string;
   duration_minutes: number;
   status: string;
+  modality: string;
+  meeting_url: string | null;
   session_number: number | null;
   internal_notes: string | null;
   created_at: string;
@@ -97,6 +104,8 @@ export interface AppointmentInput {
   patient_id: string;
   starts_at: string;
   duration_minutes?: number;
+  modality?: string;
+  meeting_url?: string | null;
   session_number?: number | null;
   internal_notes?: string | null;
 }

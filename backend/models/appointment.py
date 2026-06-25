@@ -32,6 +32,12 @@ class Appointment(Base):
     status: Mapped[str] = mapped_column(
         String(50), nullable=False, default="scheduled"
     )  # scheduled | completed | cancelled | no_show
+    modality: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="presencial"
+    )  # presencial | telepsicologia
+    # URL de la videollamada (telepsicología). Se autogenera al crear un turno
+    # remoto si no se provee. Provider abstraído (ver appointments/meeting.py).
+    meeting_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     session_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     internal_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

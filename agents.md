@@ -56,6 +56,7 @@ Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`co
 - Suite total: **62 tests** verdes (suite completa corrida junta).
 - **Falta del dominio financiero:** SEB-180 ARCA.
 - **UI (2026-06-25):** ✅ **Agenda** (`/agenda`, vista semanal: crear/estado/cancelar) + ✅ **Finanzas** (`/finanzas`: dashboard ER+FC+matriz+KPIs+metas vs real, movimientos gastos/ingresos/cobros, configuración mes+metas). Nav suma Agenda y Finanzas. Build de prod limpio. Pacientes/ficha/notas ya tenían UI → **MVP navegable de punta a punta**.
+- **Telepsicología (2026-06-25):** turnos suman `modality` (presencial|telepsicologia) + `meeting_url` (migr 0012). Al crear un turno remoto se **autogenera el link** de videollamada. Proveedor **abstraído/swappable** (`appointments/meeting.py`, default **Jitsi** sin credenciales, configurable por `MEETING_PROVIDER`). UI: selector de modalidad + link "Unirse a la videollamada". Tests en test_appointments.
 - **Nota git:** push al repo requiere `gh auth switch --user empresas-ia-dev` (sebasbizzi no tiene acceso a la org).
 
 > El ficha_schema de psicología es un **dato editable** (`specialties.ficha_schema`), no código → se ajusta tras validar con un profesional real sin tocar código.

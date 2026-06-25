@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_CHAT_ID: str = ""
 
+    # Telepsicología — proveedor de videollamada (abstraído, swappable).
+    # Default Jitsi Meet: sala única e inadivinable, cifrada, sin credenciales.
+    MEETING_PROVIDER: str = "jitsi"
+    MEETING_JITSI_BASE: str = "https://meet.jit.si"
+
     # Frontend (en backend/.env para tener un único archivo de config en local)
     NEXT_PUBLIC_API_URL: str = "http://localhost:8000"
 

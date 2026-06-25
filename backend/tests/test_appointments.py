@@ -86,3 +86,53 @@ async def test_create_appointment_unknown_patient_404(client, cleanup):
     starts = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
     r = await client.post("/appointments", headers=_auth(token), json={"patient_id": str(uuid.uuid4()), "starts_at": starts})
     assert r.status_code == 404
+
+
+async def test_telepsicologia_genera_link_automatico(client, cleanup):
+    token = await _register(client, cleanup)
+    h = _auth(token)
+    pid = (await client.post("/patients", headers=h, json={"full_name": "Pac Tele"})).json()["id"]
+    starts = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
+
+    # presencial (default) → sin link
+    r = await client.post("/appointments", headers=h, json={"patient_id": pid, "starts_at": starts})
+    assert r.status_code == 201
+    assert r.json()["modality"] == "presencial"
+    assert r.json()["meeting_url"] is None
+
+    # telepsicología sin link → se autogenera
+    r = await client.post("/appointments", headers=h, json={
+        "patient_id": pid, "starts_at": starts, "modality": "telepsicologia"})
+    assert r.status_code == 201, r.text
+    d = r.json()
+    assert d["modality"] == "telepsicologia"
+    assert d["meeting_url"] and d["meeting_url"].startswith("https://")
+
+    # telepsicología con link propio → se respeta
+    r = await client.post("/appointments", headers=h, json={
+        "patient_id": pid, "starts_at": starts, "modality": "telepsicologia",
+        "meeting_url": "https://meet.example.com/sala-propia"})
+    assert r.json()["meeting_url"] == "https://meet.example.com/sala-propia"
+
+    # modalidad inválida → 400
+    r = await client.post("/appointments", headers=h, json={
+        "patient_id": pid, "starts_at": starts, "modality": "zoomba"})
+    assert r.status_code == 400
+
+
+async def test_cambio_modalidad_reconcilia_link(client, cleanup):
+    token = await _register(client, cleanup)
+    h = _auth(token)
+    pid = (await client.post("/patients", headers=h, json={"full_name": "Pac Mod"})).json()["id"]
+    starts = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
+    aid = (await client.post("/appointments", headers=h, json={"patient_id": pid, "starts_at": starts})).json()["id"]
+
+    # presencial → telepsicología: genera link
+    r = await client.patch(f"/appointments/{aid}", headers=h, json={"modality": "telepsicologia"})
+    assert r.status_code == 200, r.text
+    assert r.json()["meeting_url"] and r.json()["meeting_url"].startswith("https://")
+
+    # telepsicología → presencial: limpia el link
+    r = await client.patch(f"/appointments/{aid}", headers=h, json={"modality": "presencial"})
+    assert r.status_code == 200
+    assert r.json()["meeting_url"] is None

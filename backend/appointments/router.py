@@ -16,8 +16,9 @@ from models import Appointment, Patient, Membership
 from auth.dependencies import CurrentPrincipal, TenantSession
 from patients.access import OPERATIONAL_ROLES
 from appointments.schemas import (
-    AppointmentCreate, AppointmentUpdate, AppointmentOut, ESTADOS,
+    AppointmentCreate, AppointmentUpdate, AppointmentOut, ESTADOS, MODALIDADES,
 )
+from appointments.meeting import generate_meeting_link
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 
@@ -49,12 +50,23 @@ async def create_appointment(body: AppointmentCreate, principal: CurrentPrincipa
     if not await _is_member(session, principal.tenant_id, professional_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El profesional no es miembro del consultorio")
 
+    if body.modality not in MODALIDADES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Modalidad inválida (presencial|telepsicologia)")
+
+    # Telepsicología: si no se provee link, se autogenera. Presencial: sin link.
+    if body.modality == "telepsicologia":
+        meeting_url = body.meeting_url or generate_meeting_link()
+    else:
+        meeting_url = None
+
     appt = Appointment(
         tenant_id=principal.tenant_id,
         professional_user_id=professional_id,
         patient_id=body.patient_id,
         starts_at=body.starts_at,
         duration_minutes=body.duration_minutes,
+        modality=body.modality,
+        meeting_url=meeting_url,
         session_number=body.session_number,
         internal_notes=body.internal_notes,
     )
@@ -99,8 +111,16 @@ async def update_appointment(appt_id: uuid.UUID, body: AppointmentUpdate, princi
     data = body.model_dump(exclude_unset=True)
     if "status" in data and data["status"] not in ESTADOS:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Estado inválido")
+    if "modality" in data and data["modality"] not in MODALIDADES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Modalidad inválida (presencial|telepsicologia)")
     for field, value in data.items():
         setattr(appt, field, value)
+    # Reconciliar el link con la modalidad final: telepsicología sin link → genera;
+    # presencial → sin link.
+    if appt.modality == "telepsicologia" and not appt.meeting_url:
+        appt.meeting_url = generate_meeting_link()
+    elif appt.modality == "presencial":
+        appt.meeting_url = None
     # flush→refresh DENTRO de la tx (tenant/RLS activo) para traer updated_at
     # (onupdate server-side) antes del commit; SET LOCAL no sobrevive al commit.
     await session.flush()
