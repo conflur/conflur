@@ -21,6 +21,7 @@ from .annual_goal import AnnualGoal
 from .payment_plan import PaymentPlan
 from .payment_installment import PaymentInstallment
 from .surplus_record import SurplusRecord
+from .annual_budget import AnnualBudget
 
 __all__ = [
     "Base",
@@ -46,4 +47,5 @@ __all__ = [
     "PaymentPlan",
     "PaymentInstallment",
     "SurplusRecord",
+    "AnnualBudget",
 ]
