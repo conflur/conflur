@@ -113,3 +113,30 @@ h3 { font-size: 1rem; }
 .tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
 .tab { padding: 0.6rem 1rem; cursor: pointer; color: var(--muted); font-weight: 500; border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none; font-size: 0.95rem; font-family: inherit; }
 .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.small { font-size: 0.82rem; }
+
+/* ---- status badges ---- */
+.badge-scheduled { background: var(--primary-soft); color: var(--primary-hover); }
+.badge-completed { background: #e6f4ea; color: #1f7a3d; }
+.badge-cancelled { background: var(--danger-soft); color: var(--danger); }
+.badge-no_show { background: #fbf0dc; color: var(--warning); }
+
+/* ---- agenda ---- */
+.agenda-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
+.appt-row { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+.appt-row:last-child { border-bottom: none; }
+.appt-time { font-weight: 600; min-width: 3.2rem; }
+.appt-body { flex: 1; }
+.appt-actions { display: flex; gap: 0.25rem; }
+.appt-cancelled .appt-body { text-decoration: line-through; opacity: 0.6; }
+
+/* ---- KPIs / finanzas ---- */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; box-shadow: var(--shadow); }
+.kpi-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); margin-bottom: 0.35rem; }
+.kpi-value { font-size: 1.4rem; font-weight: 600; }
+.kpi-value.pos { color: #1f7a3d; }
+.kpi-value.neg { color: var(--danger); }
+.matrix-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.matrix-cell { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }

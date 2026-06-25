@@ -7,7 +7,8 @@ import { useEffect } from "react";
 
 const NAV = [
   { href: "/pacientes", label: "Pacientes" },
-  // Próximos módulos: Agenda, Finanzas
+  { href: "/agenda", label: "Agenda" },
+  { href: "/finanzas", label: "Finanzas" },
   { href: "/cuenta", label: "Mi cuenta" },
 ];
 

@@ -71,3 +71,48 @@ export const saveNote = (
 ) => authedFetch<Note>(t, `/patients/${id}/notes`, { method: "POST", body: JSON.stringify(data) });
 export const sendNoteFeedback = (t: string, noteId: string, rating: number, comment?: string) =>
   authedFetch(t, `/notes/${noteId}/feedback`, { method: "POST", body: JSON.stringify({ rating, comment }) });
+
+// ---- agenda (turnos) ----
+export const APPOINTMENT_STATUS: Record<string, string> = {
+  scheduled: "Agendado",
+  completed: "Realizado",
+  cancelled: "Cancelado",
+  no_show: "No asistió",
+};
+
+export interface Appointment {
+  id: string;
+  tenant_id: string;
+  professional_user_id: string;
+  patient_id: string;
+  starts_at: string;
+  duration_minutes: number;
+  status: string;
+  session_number: number | null;
+  internal_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+export interface AppointmentInput {
+  patient_id: string;
+  starts_at: string;
+  duration_minutes?: number;
+  session_number?: number | null;
+  internal_notes?: string | null;
+}
+
+export const listAppointments = (t: string, desde?: string, hasta?: string) => {
+  const qs = new URLSearchParams();
+  if (desde) qs.set("desde", desde);
+  if (hasta) qs.set("hasta", hasta);
+  const q = qs.toString();
+  return authedFetch<Appointment[]>(t, `/appointments${q ? `?${q}` : ""}`);
+};
+export const createAppointment = (t: string, data: AppointmentInput) =>
+  authedFetch<Appointment>(t, "/appointments", { method: "POST", body: JSON.stringify(data) });
+export const updateAppointment = (
+  t: string, id: string,
+  data: Partial<{ starts_at: string; duration_minutes: number; status: string; session_number: number | null; internal_notes: string | null }>,
+) => authedFetch<Appointment>(t, `/appointments/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+export const cancelAppointment = (t: string, id: string) =>
+  authedFetch<void>(t, `/appointments/${id}`, { method: "DELETE" });
