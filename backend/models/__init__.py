@@ -18,6 +18,8 @@ from .monthly_setting import MonthlySetting
 from .income_record import IncomeRecord
 from .collection_record import CollectionRecord
 from .annual_goal import AnnualGoal
+from .payment_plan import PaymentPlan
+from .payment_installment import PaymentInstallment
 
 __all__ = [
     "Base",
@@ -40,4 +42,6 @@ __all__ = [
     "IncomeRecord",
     "CollectionRecord",
     "AnnualGoal",
+    "PaymentPlan",
+    "PaymentInstallment",
 ]
