@@ -53,7 +53,7 @@ Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`co
 - **SEB-178 ✅ precio inteligente** — `GET /finanzas/precio-sugerido`. session_types +target_margin +variable_cost (migr 0007).
 - **SEB-171 ✅ completo** — dashboard (ER+FC+matriz+KPIs) + **metas anuales** (`AnnualGoal`, migr 0008, `/finanzas/metas`, integradas al dashboard vs real).
 - **SEB-179 ✅ completo** — **planes de cuotas** (`PaymentPlan`/`PaymentInstallment`, migr 0009: cuotas con vencimiento, cierre auto al pagar la última, dirección paciente/proveedor) · **excedentes** (`SurplusRecord`, migr 0010: 4 fuentes + registro de acción + resumen) · **presupuesto** (`AnnualBudget`, migr 0011: proyección con inflación compuesta vs real reusando `costo_hora`). `/finanzas/planes-cuotas`, `/finanzas/excedentes`, `/finanzas/presupuesto`. +12 tests.
-- Suite total: **63 tests** verdes.
+- Suite total: **62 tests** verdes (suite completa corrida junta).
 - **Falta del dominio financiero:** SEB-180 ARCA.
 - **UI (2026-06-25):** ✅ **Agenda** (`/agenda`, vista semanal: crear/estado/cancelar) + ✅ **Finanzas** (`/finanzas`: dashboard ER+FC+matriz+KPIs+metas vs real, movimientos gastos/ingresos/cobros, configuración mes+metas). Nav suma Agenda y Finanzas. Build de prod limpio. Pacientes/ficha/notas ya tenían UI → **MVP navegable de punta a punta**.
 - **Nota git:** push al repo requiere `gh auth switch --user empresas-ia-dev` (sebasbizzi no tiene acceso a la org).
