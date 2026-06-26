@@ -38,11 +38,11 @@ class Settings(BaseSettings):
     CS_MODEL: str = "claude-sonnet-4-6"
     FINANCE_MODEL: str = "claude-sonnet-4-6"
 
-    # Billing
-    STRIPE_SECRET_KEY: str
-    STRIPE_WEBHOOK_SECRET: str
-    MERCADOPAGO_ACCESS_TOKEN: str
-    MERCADOPAGO_WEBHOOK_SECRET: str
+    # Billing — opcionales hasta que se active el cobro (no bloquean el arranque)
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    MERCADOPAGO_ACCESS_TOKEN: str = ""
+    MERCADOPAGO_WEBHOOK_SECRET: str = ""
 
     # Telegram
     TELEGRAM_BOT_TOKEN: str = ""
