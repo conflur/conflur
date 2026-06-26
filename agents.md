@@ -30,7 +30,7 @@ Empresa agéntica (Capa 2 de EMPRESAS-IA) de software B2C para profesionales de 
 
 ⚠️ **FASE: CONSTRUCCIÓN — M0**
 
-Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`conflur-production.up.railway.app`), frontend en Vercel, DB Neon con schema aplicado.
+Infra lista (SEB-161 a 164): repo `conflur/conflur` (org propia, org-por-instancia; el viejo `empresas-ia/conflur` quedó archivado), backend en Railway (`conflur-production.up.railway.app`), frontend en Vercel, DB Neon con schema aplicado.
 
 **SEB-166 (Auth) — ✅ DONE, verificado en prod (`https://conflur.vercel.app`).**
 - Fundación de tenancy: `tenants` + `memberships` + roles + `patient_access` + RLS en 8 tablas. Ver `docs/architecture.md` §Tenancy y D11–D14.
@@ -58,7 +58,7 @@ Infra lista (SEB-161 a 164): repo `empresas-ia/conflur`, backend en Railway (`co
 - **UI (2026-06-25):** ✅ **Agenda** (`/agenda`, vista semanal: crear/estado/cancelar) + ✅ **Finanzas** (`/finanzas`: dashboard ER+FC+matriz+KPIs+metas vs real, movimientos gastos/ingresos/cobros, configuración mes+metas). Nav suma Agenda y Finanzas. Build de prod limpio. Pacientes/ficha/notas ya tenían UI → **MVP navegable de punta a punta**.
 - **Telepsicología (2026-06-25):** turnos suman `modality` (presencial|telepsicologia) + `meeting_url` (migr 0012). Al crear un turno remoto se **autogenera el link** de videollamada. Proveedor **abstraído/swappable** (`appointments/meeting.py`, default **Jitsi** sin credenciales, configurable por `MEETING_PROVIDER`; Google Meet vía Calendar = follow-up). UI: selector de modalidad + link "Unirse a la videollamada". Tests en test_appointments.
 - **Notas SOAP (2026-06-25):** el agente de notas soporta `note_format` (libre|soap). SOAP estructura en Subjetivo/Objetivo/Análisis/Plan vía prompt dedicado (`agents/notes.py`), sin cambio de schema (se persiste en `template_type`). UI NotasTab: selector Libre/SOAP + badge SOAP en el historial. Test unitario del prompt.
-- **Nota git:** push al repo requiere `gh auth switch --user empresas-ia-dev` (sebasbizzi no tiene acceso a la org).
+- **Nota git:** repo en `conflur/conflur`; se commitea/pushea como `sebasbizzi` (Owner). Ya no hace falta `gh auth switch`. (Se migró por espejo, no por Transfer, por el hold anti-fraude de GitHub sobre la org nueva.)
 
 > El ficha_schema de psicología es un **dato editable** (`specialties.ficha_schema`), no código → se ajusta tras validar con un profesional real sin tocar código.
 
