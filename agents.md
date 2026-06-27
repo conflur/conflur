@@ -32,7 +32,9 @@ Empresa agéntica (Capa 2 de EMPRESAS-IA) de software B2C para profesionales de 
 
 Infra lista (SEB-161 a 164): repo `conflur/conflur` (org propia, org-por-instancia; el viejo `empresas-ia/conflur` quedó archivado), backend en Railway (`conflur-production.up.railway.app`), frontend en Vercel, DB Neon con schema aplicado.
 
-**SEB-166 (Auth) — ✅ DONE, verificado en prod (`https://conflur.vercel.app`).**
+**Prod (2026-06-26):** frontend `https://conflur-three.vercel.app` (Vercel, cuenta sebabizzi@gmail, proyecto `conflur`) · backend `https://conflur-backend-production.up.railway.app` (Railway, proyecto `conflur`). Stack verificado end-to-end (register→login→dashboard→API). Deploy por CLI/API (ver `docs/progress/2026-06-26.md`). Falta: decomisar deploys viejos en cuentas empresas-ia.
+
+**SEB-166 (Auth) — ✅ DONE, verificado en prod.**
 - Fundación de tenancy: `tenants` + `memberships` + roles + `patient_access` + RLS en 8 tablas. Ver `docs/architecture.md` §Tenancy y D11–D14.
 - Backend (`backend/auth/`): `/auth/register|login|me` (password, bcrypt+JWT) y `/auth/passkey/*` (WebAuthn con `py_webauthn`). Dependency valida Bearer → `set_tenant` → RLS. 20 tests pasan.
 - Frontend (`frontend/src`): NextAuth v4 (Credentials password + passkey), `/login`, `/register`, `/dashboard` protegido, middleware, `@simplewebauthn/browser`.
