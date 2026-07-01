@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     # Anthropic / LiteLLM — modelo configurable por agente (default Sonnet 4.6)
     ANTHROPIC_API_KEY: str
     NOTES_MODEL: str = "claude-sonnet-4-6"
+    DISCOVERY_MODEL: str = "claude-sonnet-4-6"
     CEO_MODEL: str = "claude-sonnet-4-6"
     CONTENT_MODEL: str = "claude-sonnet-4-6"
     CS_MODEL: str = "claude-sonnet-4-6"
