@@ -1,4 +1,5 @@
-"""Tests del Agente de Descubrimiento (unit) — composición de prompt + turno."""
+"""Tests del Agente de Descubrimiento (unit) — composición de prompt + turno + consolidación."""
+from types import SimpleNamespace
 import pytest
 from llm.client import LLMClient, LLMResult
 from agents.discovery import build_system_prompt, discovery_reply, synthesize_discovery, CONFLUR
@@ -80,3 +81,32 @@ def test_sintesis_parsea_json():
     assert out["interes"] is True
     # la transcripción viaja al prompt con etiquetas legibles
     assert "PERSONA:" in seen["user"] and "ASISTENTE:" in seen["user"]
+
+
+@pytest.mark.unit
+def test_consolidacion_agrega_hallazgos():
+    from agents.discovery_store import aggregate_findings
+
+    def row(rol, dolores, terms, interes, contacto):
+        return SimpleNamespace(
+            rol=rol, interes=interes, contacto=contacto,
+            findings={"rol": rol, "dolores": dolores, "terminos": terms, "interes": interes, "contacto": contacto},
+        )
+
+    rows = [
+        row("solo", ["notas se acumulan", "no lleva la cuenta"],
+            {"turno_o_cita": "turno", "paciente_o_consultante": "paciente", "nombre_seccion_finanzas": "finanzas"}, True, "a@mail.com"),
+        row("solo", ["notas se acumulan"],
+            {"turno_o_cita": "turno", "paciente_o_consultante": "consultante", "nombre_seccion_finanzas": "finanzas"}, False, None),
+        row("consultorio_con_equipo", ["cobrar es tedioso"],
+            {"turno_o_cita": "cita"}, True, "b@mail.com"),
+    ]
+    out = aggregate_findings(rows)
+    assert out["total_charlas"] == 3
+    assert out["por_rol"] == {"solo": 2, "consultorio_con_equipo": 1}
+    assert out["dolores_frecuentes"][0] == ("notas se acumulan", 2)
+    assert out["terminos"]["turno_vs_cita"] == {"turno": 2, "cita": 1}
+    assert out["terminos"]["nombre_seccion_finanzas"] == {"finanzas": 2}
+    assert out["interesados"] == 2
+    assert out["pct_interes"] == 66.7
+    assert set(out["contactos"]) == {"a@mail.com", "b@mail.com"}
