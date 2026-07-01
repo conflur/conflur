@@ -57,6 +57,12 @@ Formato: situación · ❌ malo (por qué) · ✅ bueno (por qué). Cada correcc
 - ❌ *"¿qué esperás en 'Mis números'?"* (el label es nuestro; sin marco no significa nada).
 - ✅ separar: **vocabulario de ellos** temprano ("¿decís turno o cita?") · **labels nuestros** después del concepto y con marco ("si tuviera una sección donde ves cómo le va al consultorio, ¿cómo la llamarías?").
 
+**E4 — No repetir preguntas / trackear lo respondido (semilla 2026-07-01, de la 1ª corrida simulada)**
+- ❌ Preguntar dos veces casi textual ("las notas, ¿te genera culpa o lo evitás?") porque la persona
+  respondió otra cosa → bot-tell.
+- ✅ Reconocer lo que dijo y avanzar; si hay que retomar, reformular, no repetir. Y no soltar el
+  momento de la separación consultorio/personal ("saco de la caja") — es enseñanza clave, profundizar ahí.
+
 ## El loop de aprendizaje (cómo mejora)
 1. **Señales por conversación:** engagement (¿respondió / se fue?), reacción explícita ("sos un bot"), **revisión humana de transcripts** (marcar turnos buenos/malos).
 2. **Extracción de lección** → **KM** (área comunicación/aprendizaje), aplicando el principio de
