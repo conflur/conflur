@@ -1,7 +1,7 @@
 """Tests del Agente de Descubrimiento (unit) — composición de prompt + turno."""
 import pytest
 from llm.client import LLMClient, LLMResult
-from agents.discovery import build_system_prompt, discovery_reply, CONFLUR
+from agents.discovery import build_system_prompt, discovery_reply, synthesize_discovery, CONFLUR
 
 
 @pytest.mark.unit
@@ -56,3 +56,27 @@ def test_apertura_con_historial_vacio():
 
     res = discovery_reply([], nombre="Laura", referidor="Martín", client=LLMClient(backend=fake_backend))
     assert "Conflur" in res.text
+
+
+@pytest.mark.unit
+def test_sintesis_parsea_json():
+    seen = {}
+
+    def fake_backend(messages, model, max_tokens, temperature):
+        seen["user"] = messages[1]["content"]
+        # el modelo devuelve el JSON envuelto en fences (caso a manejar)
+        return LLMResult(
+            text='```json\n{"rol": "solo", "dolores": ["notas se acumulan"], "interes": true}\n```',
+            model=model, input_tokens=100, output_tokens=30,
+        )
+
+    history = [
+        {"role": "assistant", "content": "¿Trabajás sola?"},
+        {"role": "user", "content": "Sí, sola. Las notas se me acumulan."},
+    ]
+    out = synthesize_discovery(history, client=LLMClient(backend=fake_backend))
+    assert out["rol"] == "solo"
+    assert out["dolores"] == ["notas se acumulan"]
+    assert out["interes"] is True
+    # la transcripción viaja al prompt con etiquetas legibles
+    assert "PERSONA:" in seen["user"] and "ASISTENTE:" in seen["user"]

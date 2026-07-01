@@ -13,6 +13,7 @@ instancia. Fase 1 (este módulo): motor conversacional. Fases siguientes: sínte
 Principio: el agente produce UN mensaje corto por turno (Grice: una idea por mensaje) y espera la
 respuesta — nunca un monólogo.
 """
+import json
 from dataclasses import dataclass
 
 from config import settings
@@ -125,3 +126,43 @@ def discovery_reply(
         max_tokens=300,
         temperature=0.6,
     )
+
+
+# --- Fase 2: síntesis (transcript → hallazgos estructurados para el KM) --------------------- #
+_SINTESIS_PROMPT = """Sos un analista. A partir de la transcripción de una charla de descubrimiento
+con un/a psicólogo/a, extraé un JSON (en español, valores concisos) con EXACTAMENTE estos campos:
+- rol: "solo" | "consultorio_con_equipo" | "desconocido"
+- dolores: lista de tags cortos (ej. "las notas se acumulan", "no lleva la cuenta de la plata")
+- terminos: objeto {"turno_o_cita", "paciente_o_consultante", "nombre_seccion_finanzas"} (null si no surgió cada uno)
+- separacion_consultorio_personal: cómo maneja sueldo/caja (texto corto o null)
+- reaccion_concepto: qué le resonó / qué pidió (texto corto)
+- feedback_bot: qué dijo del asistente (texto corto o null)
+- interes: true | false (si quiere que le avisen)
+- contacto: mail/teléfono si lo dejó, o null
+- resumen: 1-2 oraciones
+Respondé SOLO con el JSON, sin markdown ni texto adicional."""
+
+
+def _transcript_text(history: list[dict]) -> str:
+    etiqueta = {"assistant": "ASISTENTE", "user": "PERSONA"}
+    return "\n".join(f"{etiqueta.get(t['role'], t['role']).upper()}: {t['content']}" for t in history)
+
+
+def synthesize_discovery(
+    history: list[dict], *, client: LLMClient | None = None, model: str | None = None,
+) -> dict:
+    """Extrae hallazgos estructurados de la transcripción (para consolidar en el KM)."""
+    client = client or default_client
+    res = client.complete(
+        [
+            {"role": "system", "content": _SINTESIS_PROMPT},
+            {"role": "user", "content": _transcript_text(history)},
+        ],
+        model=model or settings.DISCOVERY_MODEL,
+        max_tokens=600,
+        temperature=0.0,
+    )
+    txt = res.text.strip()
+    if txt.startswith("```"):  # por si envuelve en fences
+        txt = txt.strip("`").removeprefix("json").strip()
+    return json.loads(txt)
