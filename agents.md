@@ -63,6 +63,15 @@ Infra lista (SEB-161 a 164): repo `conflur/conflur` (org propia, org-por-instanc
   `/cuenta/discovery` (crear link con nombre+referidor, lista charlas abiertas/cerradas,
   hallazgos consolidados). Migración aplicada. 7 tests integration verdes.
   Estado: **Fase 1 ✅ · 2a ✅ · 2b ✅ · 3 web ✅ · 3b Telegram pendiente.**
+- **Setup staging (2026-07-02) — en curso, no cerrado:** se decidió armar ambiente staging antes
+  de deployar Fase 3 a prod. `main` = staging, `production` = prod (rama git nueva creada apuntando
+  al commit prod pre-Fase 3). Neon branch `staging` creado. Railway prod reconectado a GitHub con
+  auto-deploy en `production`. Railway staging `conflur-backend-staging` creado con env vars
+  cargadas pero **build failed hasta setear Root Directory=backend en UI** (Railway CLI no cubre
+  eso). Falta también: cambiar Vercel prod a branch `production` y crear proyecto Vercel staging.
+  **`main` NO está pusheado** — se pushea recién cuando staging levante. Detalles + próximos pasos
+  exactos en `docs/progress/2026-07-02.md` §🔜 PRÓXIMA SESIÓN. Checklist canónico en
+  `docs/deploy-staging.md`. Ambientes en `docs/architecture.md` §Ambientes (D-STAGING).
 - Suite total: **77 tests** verdes (`77 passed, 16 warnings in 1401.43s`).
 - **Falta del dominio financiero:** SEB-180 ARCA.
 - **UI (2026-06-25):** ✅ **Agenda** (`/agenda`, vista semanal: crear/estado/cancelar) + ✅ **Finanzas** (`/finanzas`: dashboard ER+FC+matriz+KPIs+metas vs real, movimientos gastos/ingresos/cobros, configuración mes+metas). Nav suma Agenda y Finanzas. Build de prod limpio. Pacientes/ficha/notas ya tenían UI → **MVP navegable de punta a punta**.
@@ -76,7 +85,7 @@ Infra lista (SEB-161 a 164): repo `conflur/conflur` (org propia, org-por-instanc
 
 **Diseño v2 consolidado** en `docs/architecture.md` (D15–D20) y Linear reestructurado (SEB-175→182): verticales por esquema, omnicanal de dos lados, dominio financiero (carga por compra + costo-hora + precio inteligente + devengado/percibido), facturación ARCA, fichas + seguridad + export durable, agentes core→premium.
 
-**Próximo sugerido:** SEB-176 (ficha clínica por esquema — guardar/validar valores de la ficha del paciente, usa el schema de SEB-175) o SEB-167 (agenda). Luego SEB-165→169 (LiteLLM→notas IA, core). Pasada de UI al final.
+**Próximo sugerido (2026-07-02):** terminar el setup de staging (paso 1 UI click de Root Directory en Railway staging + resto según `docs/progress/2026-07-02.md` §🔜 PRÓXIMA SESIÓN) → pushear main → QA de Fase 3 en staging → promover a prod → recién ahí Fase 3b (Telegram).
 
 ---
 
