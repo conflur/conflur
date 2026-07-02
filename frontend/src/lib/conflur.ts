@@ -250,6 +250,47 @@ export const getMetas = (t: string, year: number) =>
 export const upsertMetas = (t: string, data: AnnualGoal) =>
   authedFetch<AnnualGoal>(t, "/finanzas/metas", { method: "PUT", body: JSON.stringify(data) });
 
+// ---- Discovery ---
+
+export interface DiscoverySessionOut {
+  token: string;
+  url: string;
+  nombre: string;
+  referidor: string | null;
+  history: { role: "assistant" | "user"; content: string }[];
+  closed: boolean;
+}
+
+export interface DiscoverySessionSummary {
+  token: string;
+  nombre: string;
+  referidor: string | null;
+  closed: boolean;
+  finding_id: string | null;
+  created_at: string;
+  url: string;
+}
+
+export interface DiscoveryFindingsOut {
+  sessions: DiscoverySessionSummary[];
+  consolidated: {
+    total_charlas: number;
+    interesados: number;
+    pct_interes: number | null;
+    dolores_frecuentes: [string, number][];
+    contactos: string[];
+  };
+}
+
+export const createDiscoverySession = (t: string, nombre: string, referidor?: string) =>
+  authedFetch<DiscoverySessionOut>(t, "/discovery/sessions", {
+    method: "POST",
+    body: JSON.stringify({ nombre, referidor: referidor || null }),
+  });
+
+export const listDiscoveryFindings = (t: string) =>
+  authedFetch<DiscoveryFindingsOut>(t, "/discovery/findings");
+
 /** Formatea un monto en la moneda dada (default ARS). */
 export function money(n: number | null | undefined, currency = "ARS"): string {
   if (n === null || n === undefined) return "—";

@@ -55,7 +55,15 @@ Infra lista (SEB-161 a 164): repo `conflur/conflur` (org propia, org-por-instanc
 - **SEB-178 ✅ precio inteligente** — `GET /finanzas/precio-sugerido`. session_types +target_margin +variable_cost (migr 0007).
 - **SEB-171 ✅ completo** — dashboard (ER+FC+matriz+KPIs) + **metas anuales** (`AnnualGoal`, migr 0008, `/finanzas/metas`, integradas al dashboard vs real).
 - **SEB-179 ✅ completo** — **planes de cuotas** (`PaymentPlan`/`PaymentInstallment`, migr 0009: cuotas con vencimiento, cierre auto al pagar la última, dirección paciente/proveedor) · **excedentes** (`SurplusRecord`, migr 0010: 4 fuentes + registro de acción + resumen) · **presupuesto** (`AnnualBudget`, migr 0011: proyección con inflación compuesta vs real reusando `costo_hora`). `/finanzas/planes-cuotas`, `/finanzas/excedentes`, `/finanzas/presupuesto`. +12 tests.
-- Suite total: **62 tests** verdes (suite completa corrida junta).
+- **Agente de Descubrimiento — canal web (2026-07-02) ✅ completo:**
+  `DiscoverySession` (migr 0014, sin RLS — UUID token = control de acceso) + router `discovery/`
+  (crear sesión auth + `GET /sessions/{token}`, `POST /sessions/{token}/message`,
+  `POST /sessions/{token}/close`, `GET /findings` — los tres últimos públicos) +
+  frontend `/discovery/[token]` (chat sin login: burbujas, input, "Terminar conversación") +
+  `/cuenta/discovery` (crear link con nombre+referidor, lista charlas abiertas/cerradas,
+  hallazgos consolidados). Migración aplicada. 7 tests integration verdes.
+  Estado: **Fase 1 ✅ · 2a ✅ · 2b ✅ · 3 web ✅ · 3b Telegram pendiente.**
+- Suite total: **77 tests** verdes (`77 passed, 16 warnings in 1401.43s`).
 - **Falta del dominio financiero:** SEB-180 ARCA.
 - **UI (2026-06-25):** ✅ **Agenda** (`/agenda`, vista semanal: crear/estado/cancelar) + ✅ **Finanzas** (`/finanzas`: dashboard ER+FC+matriz+KPIs+metas vs real, movimientos gastos/ingresos/cobros, configuración mes+metas). Nav suma Agenda y Finanzas. Build de prod limpio. Pacientes/ficha/notas ya tenían UI → **MVP navegable de punta a punta**.
 - **Telepsicología (2026-06-25):** turnos suman `modality` (presencial|telepsicologia) + `meeting_url` (migr 0012). Al crear un turno remoto se **autogenera el link** de videollamada. Proveedor **abstraído/swappable** (`appointments/meeting.py`, default **Jitsi** sin credenciales, configurable por `MEETING_PROVIDER`; Google Meet vía Calendar = follow-up). UI: selector de modalidad + link "Unirse a la videollamada". Tests en test_appointments.

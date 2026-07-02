@@ -14,6 +14,7 @@ from finance.plans import router as plans_router
 from finance.surplus import router as surplus_router
 from finance.budget import router as budget_router
 from specialties.router import router as specialties_router
+from discovery.router import router as discovery_router
 
 
 @asynccontextmanager
@@ -47,6 +48,7 @@ app.include_router(plans_router)
 app.include_router(surplus_router)
 app.include_router(budget_router)
 app.include_router(specialties_router)
+app.include_router(discovery_router)
 
 
 @app.get("/health")

@@ -23,6 +23,7 @@ from .payment_installment import PaymentInstallment
 from .surplus_record import SurplusRecord
 from .annual_budget import AnnualBudget
 from .discovery_finding import DiscoveryFinding
+from .discovery_session import DiscoverySession
 
 __all__ = [
     "Base",
@@ -50,4 +51,5 @@ __all__ = [
     "SurplusRecord",
     "AnnualBudget",
     "DiscoveryFinding",
+    "DiscoverySession",
 ]
