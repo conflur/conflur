@@ -60,9 +60,23 @@
 
 ## Ambientes
 
-- **Local:** desarrollo en Docker
-- **Staging:** se configura antes del primer usuario real — base de datos independiente
-- **Producción:** Vercel (frontend) + Railway (backend) + Neon.tech (DB)
+Tres ambientes. Cada uno con su base de datos independiente. Rama de git determina el ambiente de deploy.
+
+| Ambiente | Rama git | Frontend | Backend | Base de datos |
+|---|---|---|---|---|
+| **Local** | (working tree) | `localhost:3000` | `localhost:8000` | branch dev de Neon (o local) |
+| **Staging** | `main` | Vercel proyecto `conflur-staging` | Railway servicio `conflur-backend-staging` | Neon branch `staging` (schema copiado de prod) |
+| **Producción** | `production` | Vercel proyecto `conflur` (existente) | Railway servicio `conflur-backend` (existente) | Neon rama `main` (existente) |
+
+**Flujo de deploy:**
+1. Todo commit va a `main` → auto-deploy a **staging**.
+2. Vos hacés QA manual en staging.
+3. Cuando el cambio está OK: `git checkout production && git merge --ff-only main && git push origin production` → auto-deploy a **prod**.
+4. Migraciones de DB: aplicar primero al branch de staging con `DATABASE_URL` de staging; validar; después al branch de prod.
+
+**Decisión D-STAGING [2026-07-02]:** se crea staging al llegar al primer usuario real (link de discovery a compartir con psicólogas). Antes había un solo ambiente remoto (prod). El playbook exige tres ambientes desde el primer usuario (`docs/playbook.md:274`).
+
+**Setup paso a paso:** `docs/deploy-staging.md` (checklist para Neon + Railway + Vercel).
 
 ---
 
