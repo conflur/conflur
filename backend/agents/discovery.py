@@ -116,9 +116,15 @@ def discovery_reply(
     `history` vacío → produce el mensaje de apertura.
     """
     client = client or default_client
-    # Anthropic exige al menos un mensaje de usuario. Para la apertura (historial vacío) inyectamos
-    # un disparador interno que no forma parte de la conversación visible.
-    convo = history or [{"role": "user", "content": "(Arrancá vos: escribí solo el primer mensaje de apertura.)"}]
+    _trigger = {"role": "user", "content": "(Arrancá vos: escribí solo el primer mensaje de apertura.)"}
+    # Anthropic exige que el primer mensaje sea 'user'. Si el historial empieza con 'assistant'
+    # (mensaje de apertura guardado en la sesión), inyectamos el mismo disparador inicial.
+    if not history:
+        convo = [_trigger]
+    elif history[0]["role"] == "assistant":
+        convo = [_trigger, *history]
+    else:
+        convo = history
     messages = [{"role": "system", "content": build_system_prompt(nombre, referidor, cfg)}, *convo]
     return client.complete(
         messages,
