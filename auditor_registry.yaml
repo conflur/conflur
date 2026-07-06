@@ -1,0 +1,36 @@
+# Config de instancia para el auditor (knowledge_module/auditor/) — Capa 2, EIA-1/Conflur.
+# Ver knowledge_module/docs/AUDITOR_DESIGN_GATE.md.
+#
+# Primer registry de esta instancia (2026-07-06) — motivado por encontrar, en otra
+# conversación, que el Discovery Agent no escribe nada al Knowledge Module (guarda todo en
+# la App DB local de EIA-1). Verificado en código real (no solo lo que reportó esa
+# conversación): confirmado que EIA-1 no tiene NINGUNA referencia a knowledge_module/
+# motor_api/aprendizaje en todo backend/ — ni discovery.py ni notes.py escriben al KM.
+#
+# Si se agrega un agente nuevo y no se declara acá, el auditor no lo audita — mantener esto
+# al día es parte de la Definition of Done de cualquier módulo nuevo (ver CLAUDE.md).
+
+tenant: eia1
+
+plantillas: []
+fuentes_propias: []
+
+agentes:
+  - archivo: eia1/backend/agents/discovery.py
+    # Sin submit_tool/tools_var: no es un agente con loop de tool-use tipo CRIZA — expone
+    # funciones directas (discovery_reply, synthesize_discovery) llamadas desde discovery_store.py.
+    # No se declara debe_escribir_km: false — es deuda real, no una decisión de excepción.
+    # Lo que debería escribir (ver conversación 2026-07-06 sobre EIA-1):
+    #   - props.discovery.{session_token} (resultado estructurado de synthesize_discovery)
+    #   - props.discovery.{session_token}_transcript (transcripción completa)
+    #   - área lecciones (qué preguntas funcionaron, qué dolores aparecieron)
+
+  - archivo: eia1/backend/agents/notes.py
+    # Deuda M1 ya documentada (AUDIT-E9, auditoría 2026-07-05): el agente de notas no escribe
+    # al KM todavía. No se declara debe_escribir_km: false porque sigue siendo un gap real
+    # hoy, aunque esté sequenciado — el check refleja el estado actual, no la intención futura.
+
+# Acotado a esta instancia — sin esto, check_decisiones_diferidas escanea TODO el repo
+# (default **/DESIGN_GATE.md sin scope), mezclando ruido de otras instancias en este registry.
+design_gates_glob: "eia1/**/DESIGN_GATE.md"
+roadmap_glob: "eia1/**/ROADMAP.md"
