@@ -24,6 +24,7 @@ router = APIRouter(prefix="/discovery", tags=["discovery"])
 class CreateSessionBody(BaseModel):
     nombre: str
     referidor: str | None = None
+    genero: str | None = None  # "M" | "F" | None
 
 
 class SessionOut(BaseModel):
@@ -54,13 +55,14 @@ async def create_session(
 ):
     """Crea una sesión y genera el mensaje de apertura. Devuelve la URL a compartir."""
     referidor = body.referidor or "tu colega"
-    result = discovery_reply([], nombre=body.nombre, referidor=referidor)
+    result = discovery_reply([], nombre=body.nombre, referidor=referidor, genero=body.genero)
     opening = [{"role": "assistant", "content": result.text}]
 
     disc_sess = DiscoverySession(
         tenant_id=principal.tenant_id,
         nombre=body.nombre,
         referidor=body.referidor,
+        genero=body.genero,
         history=opening,
     )
     session.add(disc_sess)
@@ -139,7 +141,7 @@ async def send_message(token: uuid.UUID, body: MessageBody):
 
         new_history = list(disc_sess.history) + [{"role": "user", "content": body.content}]
         referidor = disc_sess.referidor or "tu colega"
-        result = discovery_reply(new_history, nombre=disc_sess.nombre, referidor=referidor)
+        result = discovery_reply(new_history, nombre=disc_sess.nombre, referidor=referidor, genero=disc_sess.genero)
         new_history = new_history + [{"role": "assistant", "content": result.text}]
 
         disc_sess.history = new_history

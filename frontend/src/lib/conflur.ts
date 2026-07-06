@@ -282,10 +282,15 @@ export interface DiscoveryFindingsOut {
   };
 }
 
-export const createDiscoverySession = (t: string, nombre: string, referidor?: string) =>
+export const createDiscoverySession = (
+  t: string,
+  nombre: string,
+  referidor?: string,
+  genero?: "M" | "F" | null,
+) =>
   authedFetch<DiscoverySessionOut>(t, "/discovery/sessions", {
     method: "POST",
-    body: JSON.stringify({ nombre, referidor: referidor || null }),
+    body: JSON.stringify({ nombre, referidor: referidor || null, genero: genero ?? null }),
   });
 
 export const listDiscoveryFindings = (t: string) =>

@@ -22,6 +22,7 @@ class DiscoverySession(Base):
     )
     nombre: Mapped[str] = mapped_column(String(255), nullable=False)
     referidor: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    genero: Mapped[str | None] = mapped_column(String(1), nullable=True)  # "M" | "F" | None
     history: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     closed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     finding_id: Mapped[uuid.UUID | None] = mapped_column(

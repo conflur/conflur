@@ -36,7 +36,7 @@ def _auth(t):
 
 
 def _fake_reply(text_out="Hola, ¿cómo estás?"):
-    def fake(history, *, nombre, referidor, cfg=None, client=None, model=None):
+    def fake(history, *, nombre, referidor, genero=None, cfg=None, client=None, model=None):
         return LLMResult(text=text_out, model="fake", input_tokens=10, output_tokens=20)
     return fake
 

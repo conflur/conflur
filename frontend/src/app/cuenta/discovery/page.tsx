@@ -17,6 +17,7 @@ export default function DiscoveryPage() {
   const [tab, setTab] = useState<Tab>("nueva");
   const [nombre, setNombre] = useState("");
   const [referidor, setReferidor] = useState("");
+  const [genero, setGenero] = useState<"M" | "F" | null>(null);
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState<DiscoverySessionOut | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -42,10 +43,11 @@ export default function DiscoveryPage() {
     setCreateError(null);
     setCreated(null);
     try {
-      const res = await createDiscoverySession(token, nombre.trim(), referidor.trim() || undefined);
+      const res = await createDiscoverySession(token, nombre.trim(), referidor.trim() || undefined, genero);
       setCreated(res);
       setNombre("");
       setReferidor("");
+      setGenero(null);
     } catch (err: unknown) {
       setCreateError(err instanceof Error ? err.message : "Error al crear la sesión");
     } finally {
@@ -64,7 +66,7 @@ export default function DiscoveryPage() {
       <div className="page-header">
         <h1>Agente de Descubrimiento</h1>
         <p className="muted">
-          Creá un link personalizado para cada psicóloga. El agente conduce la
+          Creá un link personalizado para cada profesional. El agente conduce la
           charla y guarda los hallazgos acá.
         </p>
       </div>
@@ -89,17 +91,33 @@ export default function DiscoveryPage() {
           <h2 className="card-title">Crear link de charla</h2>
           <form onSubmit={handleCreate}>
             <div className="field">
-              <label className="label">Nombre de la psicóloga *</label>
+              <label className="label">Nombre del/a profesional *</label>
               <input
                 className="input"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                placeholder="Ej: Ana García"
+                placeholder="Ej: Juan García"
                 required
               />
             </div>
             <div className="field">
-              <label className="label">¿Quién la refirió? (opcional)</label>
+              <label className="label">Género (opcional)</label>
+              <div className="radio-row">
+                {(["M", "F", null] as const).map((g) => (
+                  <label key={String(g)} className="radio-label">
+                    <input
+                      type="radio"
+                      name="genero"
+                      checked={genero === g}
+                      onChange={() => setGenero(g)}
+                    />
+                    {g === "M" ? "Masculino" : g === "F" ? "Femenino" : "No especificar"}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              <label className="label">¿Quién lo/a refirió? (opcional)</label>
               <input
                 className="input"
                 value={referidor}
@@ -116,7 +134,7 @@ export default function DiscoveryPage() {
           {created && (
             <div className="created-box">
               <p className="created-label">
-                ✓ Link listo para <strong>{created.nombre}</strong>. Compartilo por WhatsApp o mail.
+                ✓ Link listo para <strong>{created.nombre}</strong>. Compartilo por WhatsApp o mail:
               </p>
               <div className="url-row">
                 <input
@@ -229,6 +247,8 @@ export default function DiscoveryPage() {
         .label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text); }
         .input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: 14px; font-family: inherit; color: var(--text); background: #fff; outline: none; box-sizing: border-box; }
         .input:focus { border-color: var(--primary); }
+        .radio-row { display: flex; gap: 16px; flex-wrap: wrap; }
+        .radio-label { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; color: var(--text); }
         .error-msg { color: var(--danger); font-size: 13px; margin-bottom: 12px; }
         .created-box { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
         .created-label { font-size: 14px; margin-bottom: 10px; color: var(--text); }
