@@ -163,6 +163,25 @@ export default function DiscoveryPage() {
 
           {findings && (
             <>
+              {findings.market_insight && (
+                <div className="card insight-card" style={{ maxWidth: 640, marginBottom: 24 }}>
+                  <div className="insight-header">
+                    <h2 className="card-title" style={{ margin: 0 }}>Lo que aprendimos</h2>
+                    <span className="muted small">
+                      Basado en {findings.market_insight.sessions_count} charlas
+                    </span>
+                  </div>
+                  <p className="insight-narrative">{findings.market_insight.narrative}</p>
+                  {findings.market_insight.insights.aprendizajes_clave.length > 0 && (
+                    <ul className="aprendizajes-list">
+                      {findings.market_insight.insights.aprendizajes_clave.map((a, i) => (
+                        <li key={i} className="aprendizaje-item">{a}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
               {findings.consolidated.total_charlas > 0 && (
                 <div className="card" style={{ maxWidth: 640, marginBottom: 24 }}>
                   <h2 className="card-title">Hallazgos consolidados</h2>
@@ -271,6 +290,11 @@ export default function DiscoveryPage() {
         .link-sm { font-size: 13px; color: var(--primary); text-decoration: none; }
         .link-sm:hover { text-decoration: underline; }
         .small { font-size: 13px; }
+        .insight-card { border-color: var(--primary); background: var(--primary-soft); }
+        .insight-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+        .insight-narrative { font-size: 14px; color: var(--text); line-height: 1.6; margin: 0 0 12px; }
+        .aprendizajes-list { margin: 0; padding-left: 18px; }
+        .aprendizaje-item { font-size: 13px; color: var(--text); margin-bottom: 4px; line-height: 1.5; }
       `}</style>
     </AppShell>
   );

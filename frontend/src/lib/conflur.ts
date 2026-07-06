@@ -271,6 +271,20 @@ export interface DiscoverySessionSummary {
   url: string;
 }
 
+export interface DiscoveryMarketInsight {
+  sessions_count: number;
+  narrative: string;
+  insights: {
+    patrones_dolor: { dolor: string; count: number; cita: string | null }[];
+    preferencia_notas: { texto: number; audio: number; indiferente: number; no_preguntado: number };
+    por_rol: { solo: number; consultorio_con_equipo: number; desconocido: number };
+    tasa_interes: number;
+    reaccion_concepto: string | null;
+    aprendizajes_clave: string[];
+  };
+  created_at: string;
+}
+
 export interface DiscoveryFindingsOut {
   sessions: DiscoverySessionSummary[];
   consolidated: {
@@ -280,6 +294,7 @@ export interface DiscoveryFindingsOut {
     dolores_frecuentes: [string, number][];
     contactos: string[];
   };
+  market_insight: DiscoveryMarketInsight | null;
 }
 
 export const createDiscoverySession = (

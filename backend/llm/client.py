@@ -26,20 +26,28 @@ class LLMResult:
         return self.input_tokens + self.output_tokens
 
 
-# Firma del backend: (messages, model, max_tokens, temperature) -> LLMResult
-CompletionFn = Callable[[list[dict], str, int, float], LLMResult]
+# Firma del backend: (messages, model, max_tokens, temperature, top_p=None) -> LLMResult
+CompletionFn = Callable[..., LLMResult]
 
 
-def _litellm_backend(messages: list[dict], model: str, max_tokens: int, temperature: float) -> LLMResult:
+def _litellm_backend(
+    messages: list[dict],
+    model: str,
+    max_tokens: int,
+    temperature: float,
+    top_p: float | None = None,
+) -> LLMResult:
     """Backend real. Importa litellm de forma perezosa (solo se necesita en runtime)."""
     import litellm
 
+    extra = {"top_p": top_p} if top_p is not None else {}
     resp = litellm.completion(
         model=f"anthropic/{model}",
         messages=messages,
         max_tokens=max_tokens,
         temperature=temperature,
         api_key=settings.ANTHROPIC_API_KEY,
+        **extra,
     )
     text = resp.choices[0].message.content or ""
     usage = resp.usage
@@ -64,9 +72,10 @@ class LLMClient:
         model: str | None = None,
         max_tokens: int = 1024,
         temperature: float = 0.3,
+        top_p: float | None = None,
     ) -> LLMResult:
         model = model or settings.NOTES_MODEL
-        return self._backend(messages, model, max_tokens, temperature)
+        return self._backend(messages, model, max_tokens, temperature, top_p)
 
 
 # Instancia por defecto (backend litellm). Los agentes la importan; los tests
