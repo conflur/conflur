@@ -58,11 +58,21 @@ Infra lista (SEB-161 a 164): repo `conflur/conflur` (org propia, org-por-instanc
 - **Agente de Descubrimiento — canal web (2026-07-02) ✅ completo:**
   `DiscoverySession` (migr 0014, sin RLS — UUID token = control de acceso) + router `discovery/`
   (crear sesión auth + `GET /sessions/{token}`, `POST /sessions/{token}/message`,
-  `POST /sessions/{token}/close`, `GET /findings` — los tres últimos públicos) +
+  `POST /sessions/{token}/close`, `GET /findings`, `POST /insights/refresh`) +
   frontend `/discovery/[token]` (chat sin login: burbujas, input, "Terminar conversación") +
-  `/cuenta/discovery` (crear link con nombre+referidor, lista charlas abiertas/cerradas,
-  hallazgos consolidados). Migración aplicada. 7 tests integration verdes.
+  `/cuenta/discovery` (crear link con nombre+referidor+género, lista charlas, hallazgos
+  consolidados, card "Lo que aprendimos"). Migración aplicada. 7 tests integration verdes.
   Estado: **Fase 1 ✅ · 2a ✅ · 2b ✅ · 3 web ✅ · 3b Telegram pendiente.**
+  **Mejoras de calidad conversacional (2026-07-06):**
+  - Few-shot examples (6 diálogos) en el system prompt — reemplaza instrucciones puras;
+    áreas sin numeración para evitar orden scripted; max_tokens 200, top_p 0.9
+  - LLMClient: soporte `top_p` en `complete()`
+  **Capa de aprendizaje (2026-07-06) — `DiscoveryMarketInsight` (migr 0016):**
+  - `synthesize_market_insights()` — analiza N findings y extrae patrones cross-session
+  - Auto-refresh fire-and-forget al cerrar sesión (umbral ≥3 charlas)
+  - Inyección de `market_context` en el system prompt: charlas ≥4 arrancan con el
+    conocimiento acumulado de las anteriores
+  - Frontend: card narrativa "Lo que aprendimos" en tab Hallazgos
 - **Setup staging (2026-07-02) — en curso, no cerrado:** se decidió armar ambiente staging antes
   de deployar Fase 3 a prod. `main` = staging, `production` = prod (rama git nueva creada apuntando
   al commit prod pre-Fase 3). Neon branch `staging` creado. Railway prod reconectado a GitHub con
@@ -85,7 +95,7 @@ Infra lista (SEB-161 a 164): repo `conflur/conflur` (org propia, org-por-instanc
 
 **Diseño v2 consolidado** en `docs/architecture.md` (D15–D20) y Linear reestructurado (SEB-175→182): verticales por esquema, omnicanal de dos lados, dominio financiero (carga por compra + costo-hora + precio inteligente + devengado/percibido), facturación ARCA, fichas + seguridad + export durable, agentes core→premium.
 
-**Próximo sugerido (2026-07-02):** terminar el setup de staging (paso 1 UI click de Root Directory en Railway staging + resto según `docs/progress/2026-07-02.md` §🔜 PRÓXIMA SESIÓN) → pushear main → QA de Fase 3 en staging → promover a prod → recién ahí Fase 3b (Telegram).
+**Próximo sugerido (2026-07-06):** hacer charlas reales de discovery en staging para probar la mejora conversacional (few-shot + learning layer). Con ≥3 charlas cerradas se activa el primer insight de aprendizaje. Una vez validado → promover a prod → Fase 3b (Telegram).
 
 ---
 
@@ -136,6 +146,7 @@ Infra lista (SEB-161 a 164): repo `conflur/conflur` (org propia, org-por-instanc
 - [ ] **Construir el MVP** — desarrollo puede arrancar (Design Gate 🟡)
 - [ ] **Migrar proyecto Neon `conflur`** de cuenta personal `sebabizzi` a `empresas.ia.dev` — infra debe vivir bajo la cuenta técnica de la plataforma
 - [ ] **🔴 CRÍTICO — agregar `APP_DATABASE_URL` en Railway** apuntando al rol `conflur_app` (sin bypassrls). Sin esto, en producción la app usa `neondb_owner` que **saltea el RLS** → el aislamiento entre consultorios no existe. Valor en `backend/.env` local. Ver `docs/architecture.md` D14 y memoria `reference_neon_rls_bypass`.
+- [ ] **Auditoría de cumplimiento de plataforma (2026-07-05)** — corrida de lectura, sin cambios de código en esta instancia. 12 hallazgos propios (E1-E12), los 2 primeros críticos y sin confirmar todavía: **E1 (SEB-254)** — el ítem de arriba (rol de Railway) sigue sin confirmarse resuelto; **E2 (SEB-255)** — notas clínicas en texto plano, confirmar que no haya pacientes reales cargados ya. El resto (E3-E12): sin headers de seguridad en el backend, expiración de sesión por inactividad no implementada, Stripe/MercadoPago sin webhooks, sin logging de requests/errores, Design Gate con tenancy pre-rediseño, `APP_ENV=development` en prod (loguea SQL completo), agente de notas sin KM (deuda M1 documentada), Discovery sin rate limiting, nitpicks de `.env.example` y de tests. Detalle completo: `../docs/AUDITORIA_CUMPLIMIENTO_2026-07-05.md`. Pendiente: revisar cada uno con Sebas y decidir método de resolución (panel en `../plataforma/control_panel/`).
 
 ---
 
@@ -144,8 +155,7 @@ Infra lista (SEB-161 a 164): repo `conflur/conflur` (org propia, org-por-instanc
 ```
 EMPRESAS-IA/
 ├── docs/EIA1_Foundation_Document.md  ← documento fundacional del diseño
-├── knowledge_module/                  ← KM compartido (tenant_id="eia1")
-└── eia1/                              ← este repo
+└── eia1/                              ← este repo (DB propia, aislada)
     ├── agents.md                      ← este archivo
     ├── CLAUDE.md                      ← contexto de sesión para Claude
     ├── docs/
