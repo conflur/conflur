@@ -40,12 +40,15 @@ def _litellm_backend(
     """Backend real. Importa litellm de forma perezosa (solo se necesita en runtime)."""
     import litellm
 
-    extra = {"top_p": top_p} if top_p is not None else {}
+    # Anthropic no acepta temperature y top_p simultáneamente.
+    if top_p is not None:
+        extra = {"top_p": top_p}
+    else:
+        extra = {"temperature": temperature}
     resp = litellm.completion(
         model=f"anthropic/{model}",
         messages=messages,
         max_tokens=max_tokens,
-        temperature=temperature,
         api_key=settings.ANTHROPIC_API_KEY,
         **extra,
     )
