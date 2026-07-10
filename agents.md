@@ -63,16 +63,21 @@ Infra lista (SEB-161 a 164): repo `conflur/conflur` (org propia, org-por-instanc
   `/cuenta/discovery` (crear link con nombre+referidor+género, lista charlas, hallazgos
   consolidados, card "Lo que aprendimos"). Migración aplicada. 7 tests integration verdes.
   Estado: **Fase 1 ✅ · 2a ✅ · 2b ✅ · 3 web ✅ · 3b Telegram pendiente.**
-  **Mejoras de calidad conversacional (2026-07-06):**
-  - Few-shot examples (6 diálogos) en el system prompt — reemplaza instrucciones puras;
-    áreas sin numeración para evitar orden scripted; max_tokens 200, top_p 0.9
-  - LLMClient: soporte `top_p` en `complete()`
   **Capa de aprendizaje (2026-07-06) — `DiscoveryMarketInsight` (migr 0016):**
   - `synthesize_market_insights()` — analiza N findings y extrae patrones cross-session
   - Auto-refresh fire-and-forget al cerrar sesión (umbral ≥3 charlas)
   - Inyección de `market_context` en el system prompt: charlas ≥4 arrancan con el
     conocimiento acumulado de las anteriores
   - Frontend: card narrativa "Lo que aprendimos" en tab Hallazgos
+  **Rediseño completo del prompt (2026-07-09):**
+  - Objetivo explícito: confirmar si lo que construimos resuelve necesidades reales.
+  - `DiscoveryConfig.capacidades`: descripción por área (notas/agenda/finanzas), factual,
+    sin asumir dolores. Reemplaza `descripcion_producto` + `incentivo`.
+  - Apertura abierta sin categorías sugeridas: "¿Qué parte de la gestión te cuesta más
+    o te gusta menos hacer?"
+  - Bot descubre realidad primero → conecta específicamente con el producto después.
+  - Precio: "Todavía lo estamos definiendo. ¿Qué te parecería razonable pagar?"
+  - Fix `llm/client.py`: Anthropic no acepta `temperature` + `top_p` simultáneamente.
 - **Setup staging (2026-07-02) — en curso, no cerrado:** se decidió armar ambiente staging antes
   de deployar Fase 3 a prod. `main` = staging, `production` = prod (rama git nueva creada apuntando
   al commit prod pre-Fase 3). Neon branch `staging` creado. Railway prod reconectado a GitHub con
@@ -95,7 +100,10 @@ Infra lista (SEB-161 a 164): repo `conflur/conflur` (org propia, org-por-instanc
 
 **Diseño v2 consolidado** en `docs/architecture.md` (D15–D20) y Linear reestructurado (SEB-175→182): verticales por esquema, omnicanal de dos lados, dominio financiero (carga por compra + costo-hora + precio inteligente + devengado/percibido), facturación ARCA, fichas + seguridad + export durable, agentes core→premium.
 
-**Próximo sugerido (2026-07-06):** hacer charlas reales de discovery en staging para probar la mejora conversacional (few-shot + learning layer). Con ≥3 charlas cerradas se activa el primer insight de aprendizaje. Una vez validado → promover a prod → Fase 3b (Telegram).
+**Próximo sugerido (2026-07-09):**
+1. Terminar staging (3 pasos de UI en Railway + Vercel, luego CLI — ver `docs/deploy-staging.md`)
+2. Revisar charlas reales de discovery y ajustar prompt según lo observado
+3. Fase 3b: Telegram bot
 
 ---
 
