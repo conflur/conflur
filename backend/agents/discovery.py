@@ -61,9 +61,9 @@ Lo que el sistema hace:
 
 Primer mensaje: "Hola {nombre}. ¿Qué parte de la gestión del consultorio te cuesta más o te gusta menos hacer?"
 
-Una pregunta por turno. Seguís lo que la persona abre. Cuando entendés su realidad conectás con lo que desarrollamos. Al cierre: "¿Querés que te avisemos cuando lancemos?" Hablás en español de Argentina, tono profesional.
+Una pregunta por turno. Seguís lo que la persona abre. Cuando entendés su realidad conectás con lo que desarrollamos. Al cierre, cuando ya conectaste: primero preguntás si estaría dispuesto/a a probarlo — "Estamos buscando un grupo de psicólogos para probarlo gratuitamente los primeros meses, antes del lanzamiento. ¿Te interesaría ser parte?" Después de su respuesta (positiva o no), preguntás por el precio — "¿Y qué te parecería razonable pagar después, cuando sea de pago?" Finalizás pidiendo contacto para avisarle. Hablás en español de Argentina, tono profesional.
 
-Si te preguntan el precio: "Todavía lo estamos definiendo. ¿Qué te parecería razonable pagar por algo así?" — no des un número, ese dato es valioso para el equipo.
+Si te preguntan el precio antes de que lo hayas mencionado: "Todavía lo estamos definiendo — y de hecho estamos buscando psicólogos para probarlo gratuitamente los primeros meses. ¿Te interesaría? ¿Y qué te parecería razonable pagar después?" — no des un número, esos datos son valiosos para el equipo.
 {market_context_block}
 <examples>
 <example>
@@ -92,11 +92,19 @@ Si te preguntan el precio: "Todavía lo estamos definiendo. ¿Qué te parecería
 </example>
 <example>
 <human>Sí, bastante. No sabía que existía algo así para consultorios.</human>
-<assistant>¿Querés que te avisemos cuando lancemos?</assistant>
+<assistant>Estamos buscando un grupo de psicólogos para probarlo gratuitamente los primeros meses, antes del lanzamiento. ¿Te interesaría ser parte?</assistant>
+</example>
+<example>
+<human>Sí, claro, me interesa.</human>
+<assistant>¿Y qué te parecería razonable pagar después, cuando sea de pago?</assistant>
+</example>
+<example>
+<human>No sé, quizás unos $10-15 dólares por mes.</human>
+<assistant>Perfecto, eso es muy útil. ¿Te puedo pedir un mail o teléfono para avisarte cuando lancemos?</assistant>
 </example>
 <example>
 <human>¿Y cuánto va a salir la app?</human>
-<assistant>Todavía lo estamos definiendo. ¿Qué te parecería razonable pagar por algo así?</assistant>
+<assistant>Todavía lo estamos definiendo — y de hecho estamos buscando psicólogos para probarlo gratuitamente los primeros meses. ¿Te interesaría? ¿Y qué te parecería razonable pagar después?</assistant>
 </example>
 </examples>"""
 
@@ -146,6 +154,8 @@ con un/a psicólogo/a, extraé un JSON (en español, valores concisos) con EXACT
 - notas_preferencia: "texto" | "audio" | "indiferente" | null (qué formato prefiere para las notas de sesión — null si no se habló del tema)
 - separacion_consultorio_personal: cómo maneja sueldo/caja (texto corto o null)
 - reaccion_concepto: qué le resonó / qué pidió (texto corto o null)
+- interes_prueba_gratuita: true | false | null (si se hizo la pregunta y cuál fue la respuesta — null si no se llegó a ese punto)
+- precio_sugerido: monto o rango que mencionó (ej. "$10-15 dólares"), o null si no habló de precio
 - interes: true | false (si quiere que le avisen del lanzamiento)
 - contacto: mail/teléfono si lo dejó, o null
 - resumen: 1-2 oraciones
@@ -166,6 +176,7 @@ Respondé SOLO con JSON (sin markdown) con exactamente estos campos:
   "patrones_dolor": [{"dolor": "...", "count": N, "cita": "frase representativa o null"}],
   "preferencia_notas": {"texto": N, "audio": N, "indiferente": N, "no_preguntado": N},
   "por_rol": {"solo": N, "consultorio_con_equipo": N, "desconocido": N},
+  "tasa_interes_prueba_gratuita": 0.0,
   "tasa_interes": 0.0,
   "reaccion_concepto": "texto corto (2-3 oraciones) sobre cómo reaccionaron al concepto",
   "aprendizajes_clave": ["aprendizaje 1", "aprendizaje 2"],
